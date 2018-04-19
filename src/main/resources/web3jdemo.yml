@@ -1,0 +1,33 @@
+# Ethereum
+ethereum:
+  initial:
+    ether: 1000000000000000
+  geth:
+    connPool:
+      maxConnTotal: 100
+      maxConnPerRoute: 100
+      maxConnIdle: 50
+      maxIdleTimeSeconds: 300 # IMPORTANT!!! Should be less than server.connection-timeout
+      readTimeoutSeconds: 300
+      connectionTimeoutSeconds: 30
+    url: http://192.168.168.71:8545
+  admin:
+    wallet: "0xfba2068908057b811a0a9623f072dd2f6455748a"
+  cryptocurrency:
+    initial-supply: 1000000000000
+    address: "0xa411245be2139e5081e75580b4ce09234c510fc0"
+    gas-price: 20000000000
+    gas-limit: 4300000
+  mint-coins:
+    default-comment: "Coins were successfully minted."
+  initial-transfer:
+    comment: "Initial coins transfer."
+
+contractOperation:
+  exceptionTimeout: 30000
+  threadpool:
+    coreSize: 20
+    maxSize: 100
+    queueCapacity: 10
+
+web3j.scope: prototype

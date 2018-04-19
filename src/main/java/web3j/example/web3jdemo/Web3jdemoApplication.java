@@ -1,0 +1,104 @@
+package web3j.example.web3jdemo;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.web3j.crypto.CipherException;
+import org.web3j.protocol.core.DefaultBlockParameterName;
+import org.web3j.protocol.core.methods.request.EthFilter;
+import org.web3j.protocol.core.methods.response.EthBlock;
+import org.web3j.protocol.exceptions.TransactionException;
+import rx.functions.Action1;
+import web3j.example.web3jdemo.blockchain.utils.Web3jHelper;
+import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
+
+import java.io.IOException;
+import java.math.BigInteger;
+
+import static java.lang.String.format;
+
+@SpringBootApplication
+@Slf4j
+public class Web3jdemoApplication implements CommandLineRunner {
+
+    private final String APP_MESSAGE_PATTERN = "\n\tAPP: %s";
+
+    private Web3jHelper web3jHelper;
+    private ContractOperationFactory contractOperationFactory;
+
+    @Autowired
+    public Web3jdemoApplication(Web3jHelper web3jHelper, ContractOperationFactory contractOperationFactory) {
+        this.web3jHelper = web3jHelper;
+        this.contractOperationFactory = contractOperationFactory;
+    }
+
+    public static void main(String[] args) {
+        new SpringApplicationBuilder()
+                .sources(Web3jdemoApplication.class)
+//                .properties("spring.config.name=web3jdemo")
+                .web(false)
+                .build()
+                .run(args)
+                .close();
+    }
+
+    @Override
+    public void run(String... args) throws IOException, InterruptedException, TransactionException, CipherException {
+        log.info(format(APP_MESSAGE_PATTERN, web3jHelper.getWeb3ClientVersion()));
+
+
+        Action1<EthBlock> onNext = (block) -> {
+            System.out.println(block.getBlock().getNumber());
+            block.getBlock().getTransactions().forEach(tx -> {
+                tx.get();
+            });
+        };
+
+        contractOperationFactory.enrollRequestOperation(
+                "Username_1",
+                BigInteger.valueOf(11L),
+                "doc_7"+'\u241F'+"7",
+                BigInteger.valueOf(17L))
+                .execute();
+
+        contractOperationFactory.enrollRequestOperation(
+                "Username_1",
+                BigInteger.valueOf(118L),
+                "doc_8"+'\u241F'+"7",
+                BigInteger.valueOf(18L))
+                .execute();
+
+        contractOperationFactory.enrollOperation(
+                "Username_1",
+                BigInteger.valueOf(11L),
+                "doc_7"+'\u241F'+"7",
+                BigInteger.valueOf(17L))
+                .execute();
+
+        contractOperationFactory.enrollOperation(
+                "Username_1",
+                BigInteger.valueOf(11L),
+                "doc_7"+'\u241F'+"7",
+                BigInteger.valueOf(17L))
+                .execute();
+
+        web3jHelper.listenToBlocks(onNext, 10);
+
+        EthFilter filter = new EthFilter(DefaultBlockParameterName.EARLIEST,
+                DefaultBlockParameterName.LATEST, "0x978A5DfD109fE59C6250549D3Dc5602B0B731839");
+
+
+
+        /*BigInteger lastBlockNumber = null;
+        while (true) {
+            BigInteger blockNumber = web3jHelper.getLatestBlockNumber();
+            if (!blockNumber.equals(lastBlockNumber)) {
+                lastBlockNumber = blockNumber;
+                log.info(format(APP_MESSAGE_PATTERN, blockNumber));
+            }
+        }*/
+    }
+
+}
