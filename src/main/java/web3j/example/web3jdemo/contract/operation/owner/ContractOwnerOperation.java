@@ -11,11 +11,11 @@ import java.math.BigInteger;
 
 public abstract class ContractOwnerOperation extends ContractOperation {
 
-    public ContractOwnerOperation(String userName,
+    public ContractOwnerOperation(String addressIndex,
                                   BigInteger amount,
                                   String documentUid,
-                                  BigInteger documentAmount) {
-        super(userName, amount, documentUid, documentAmount);
+                                  String data) {
+        super(addressIndex, amount, documentUid, data);
     }
 
     @PostConstruct

@@ -15,8 +15,6 @@ import java.math.BigInteger;
 
 public class DldTransactionManager extends TransactionManager {
 
-    private static volatile BigInteger n = BigInteger.ZERO;
-
     private final Credentials credentials;
     private final Web3j web3j;
 
@@ -34,7 +32,6 @@ public class DldTransactionManager extends TransactionManager {
             String data,
             BigInteger value) throws IOException {
         BigInteger nonce = getNonce(web3j, credentials);
-        System.out.println(">>>>>" + nonce.toString());
         RawTransaction rawTransaction = RawTransaction.createTransaction(
                 nonce, gasPrice, gasLimit, to, value, data);
         byte[] signedMessage = TransactionEncoder.signMessage(rawTransaction, credentials);
@@ -43,18 +40,10 @@ public class DldTransactionManager extends TransactionManager {
     }
 
     private BigInteger getNonce(Web3j web3j, Credentials credentials) throws IOException {
-        synchronized (DldTransactionManager.class) {
-            if (n.equals(BigInteger.ZERO)) {
-                EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount(
-                        credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
+        EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount(
+                credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
 
-                BigInteger nonce = ethGetTransactionCount.getTransactionCount();
-
-                n = nonce;
-            } else {
-                n = n.add(BigInteger.ONE);
-            }
-            return n;
-        }
+        return ethGetTransactionCount.getTransactionCount();
     }
+
 }

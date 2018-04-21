@@ -19,6 +19,7 @@ import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactor
 import web3j.example.web3jdemo.contract.operation.ContractOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.service.DldWalletService;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -36,12 +37,14 @@ public class Web3jdemoApplication implements CommandLineRunner {
     private final Web3jHelper web3jHelper;
     private final ContractOperationFactory contractOperationFactory;
     private final DefaultContractFactory defaultContractFactory;
+    private final DldWalletService dldWalletService;
 
     @Autowired
-    public Web3jdemoApplication(Web3jHelper web3jHelper, ContractOperationFactory contractOperationFactory, DefaultContractFactory defaultContractFactory) {
+    public Web3jdemoApplication(Web3jHelper web3jHelper, ContractOperationFactory contractOperationFactory, DefaultContractFactory defaultContractFactory, DldWalletService dldWalletService) {
         this.web3jHelper = web3jHelper;
         this.contractOperationFactory = contractOperationFactory;
         this.defaultContractFactory = defaultContractFactory;
+        this.dldWalletService = dldWalletService;
     }
 
     public static void main(String[] args) {
@@ -80,48 +83,52 @@ public class Web3jdemoApplication implements CommandLineRunner {
                     System.out.println("######");
                 });
 
+        ContractOperation enrollRequestOperation0 = contractOperationFactory.registerUserOperation(
+                dldWalletService.getWalletOne(),
+                "2000",
+                "{\"userId\":2000}");
+
+        CompletableFuture<TransactionReceipt> receipt0 = enrollRequestOperation0.execute();
+        System.out.println(receipt0.get());
+
         ContractOperation enrollRequestOperation1 = contractOperationFactory.enrollRequestOperation(
-                "Username_1",
+                dldWalletService.getWalletOne(),
                 BigInteger.valueOf(11L),
-                "doc_7111" + '\u241F' + "7",
-                BigInteger.valueOf(17L));
+                "doc_7" + '\u241F' + "5",
+                "{\"invoiceAmount\":110}");
 
         CompletableFuture<TransactionReceipt> receipt1 = enrollRequestOperation1.execute();
-//        receipt1.get();
+        receipt1.get();
 //        DldContract.TransactionEventResponse transactionEventResponse1 = contract.getTransactionEvents(receipt1.get()).get(0);
 //        System.out.println(ConvertHelper.TransactionEventResponseToString(transactionEventResponse1));
 
-        System.out.println("=====================================");
-
         CompletableFuture<TransactionReceipt> receipt2 = contractOperationFactory.enrollRequestOperation(
-                "Username_1",
-                BigInteger.valueOf(118L),
-                "doc_8111" + '\u241F' + "7",
-                BigInteger.valueOf(18L))
+                dldWalletService.getWalletOne(),
+                BigInteger.valueOf(12L),
+                "doc_8" + '\u241F' + "5",
+                "{\"invoiceAmount\":120}")
                 .execute();
-//        receipt2.get();
+        receipt2.get();
 
         System.out.println("*************************************");
 
-        Thread.sleep(10000);
-
         CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.enrollOperation(
-                "Username_1",
+                dldWalletService.getWalletOne(),
                 BigInteger.valueOf(11L),
-                "doc_7111" + '\u241F' + "7",
-                BigInteger.valueOf(17L))
+                "doc_7" + '\u241F' + "5",
+                "{\"invoiceResponseId\":1000}")
                 .execute();
-//        receipt3.get();
+        System.out.println(receipt3.get());
 
         CompletableFuture<TransactionReceipt> receipt4 = contractOperationFactory.enrollOperation(
-                "Username_1",
-                BigInteger.valueOf(118L),
-                "doc_8111" + '\u241F' + "7",
-                BigInteger.valueOf(18L))
+                dldWalletService.getWalletOne(),
+                BigInteger.valueOf(12L),
+                "doc_8" + '\u241F' + "5",
+                "{\"invoiceResponseId\":1001}")
                 .execute();
-//        receipt4.get();
+        receipt4.get();
 
-        web3jHelper.listenToBlocks(onNext, 10);
+        web3jHelper.listenToBlocks(onNext, 2);
 
         EthFilter filter = new EthFilter(DefaultBlockParameterName.EARLIEST,
                 DefaultBlockParameterName.LATEST, "0x978A5DfD109fE59C6250549D3Dc5602B0B731839");

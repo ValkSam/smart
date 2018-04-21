@@ -30,10 +30,10 @@ public class CredentialsHelper {
     }
 
     public Credentials getOwnerCredentials() throws IOException, CipherException {
-        return getOwnerCredentials(ethereumConfig.getContractOwnerPrivateKey());
+        return getCredentials(ethereumConfig.getContractOwnerPrivateKey());
     }
 
-    public Credentials getOwnerCredentials(String privateKey) {
+    public Credentials getCredentials(String privateKey) {
         return Credentials.create(Numeric.toHexStringNoPrefix(new BigInteger(privateKey)));
     }
 

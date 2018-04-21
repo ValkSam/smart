@@ -2,15 +2,15 @@ pragma solidity ^0.4.21;
 
 contract root {
     address private rooter;
-    
+
     function root() public{
         rooter = msg.sender;
     }
-    
+
     function getRooter() public view returns(address){
         return rooter;
     }
-    
+
     modifier onlyRoot {
         require (msg.sender == rooter);
         _;
@@ -18,12 +18,12 @@ contract root {
 }
 
 contract user {
-    
+
     struct Balance {
         address addr;
         uint amount;
     }
-    
+
     struct UserBalance {
         Balance active;
         Balance passive;

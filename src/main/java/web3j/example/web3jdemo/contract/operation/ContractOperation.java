@@ -18,19 +18,19 @@ public abstract class ContractOperation {
 
     protected DldContract contract;
 
-    protected final String userName;
+    protected final String addressIndex;
     protected final BigInteger amount;
     protected final String documentNumber;
-    protected final BigInteger documentAmount;
+    protected final String data;
 
-    public ContractOperation(String userName,
+    public ContractOperation(String addressIndex,
                              BigInteger amount,
                              String documentUid,
-                             BigInteger documentAmount) {
-        this.userName = userName;
+                             String data) {
+        this.addressIndex = addressIndex;
         this.amount = amount;
         this.documentNumber = documentUid;
-        this.documentAmount = documentAmount;
+        this.data = data;
     }
 
     @Async
