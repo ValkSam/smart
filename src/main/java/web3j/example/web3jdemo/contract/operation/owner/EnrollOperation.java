@@ -23,6 +23,7 @@ public class EnrollOperation extends ContractOwnerOperation {
 
     @Override
     public CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException {
+//        return CompletableFuture.supplyAsync(TransactionReceipt::new);
         return contract.enroll(userName,
                 amount,
                 documentNumber,

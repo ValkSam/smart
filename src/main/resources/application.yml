@@ -12,7 +12,7 @@ ethereum:
       connectionTimeoutSeconds: 30
     url: http://localhost:8502
   contract:
-    address: "0x540f25bafD9f5C75d47f6Ed955eea3b01f8790fb"
+    address: "0x57d6EB1cDb15CA3F697a72FCd4B8370E035e676b"
     owner:
       privateKey: 78917374818337044569113600265904518667624904769081976474081495335171398564570
       wallet:

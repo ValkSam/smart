@@ -1,0 +1,198 @@
+pragma solidity ^0.4.21;
+
+contract root {
+    address private rooter;
+
+    function root() public{
+        rooter = msg.sender;
+    }
+
+    function getRooter() public view returns(address){
+        return rooter;
+    }
+
+    modifier onlyRoot {
+        require (msg.sender == rooter);
+        _;
+    }
+}
+
+contract user {
+
+    struct Balance {
+        address addr;
+        uint amount;
+    }
+
+    struct UserBalance {
+        Balance passive;
+        Balance active;
+    }
+
+    struct DocLog {
+        uint blockNumber;
+        uint amount;
+        uint documentAmount;
+    }
+
+    struct UserData {
+        UserBalance balance;
+        mapping(bytes32 => DocLog) docLog;
+    }
+
+    mapping (bytes32 => UserData) users;
+
+    modifier onlyExistedUser(string userName) {
+        bytes32 userNameHash = keccak256(userName);
+        require(users[userNameHash].balance.active.addr != address(0x0));
+        _;
+    }
+
+    modifier onlyUniqueDocument(string userName, string documentUID) {
+        bytes32 userNameHash = keccak256(userName);
+        bytes32 documentUIDHash = keccak256(documentUID);
+        require(users[userNameHash].docLog[documentUIDHash].blockNumber == 0);
+        _;
+    }
+
+    modifier onlyExistedDocument(string userName, string documentUID, uint amount) {
+        require(users[keccak256(userName)].docLog[keccak256(documentUID)].amount == amount);
+        _;
+    }
+}
+
+contract document {
+
+    struct Document {
+        string uid;
+        uint amount;
+    }
+
+    modifier onlyDocumented(Document doc) {
+        require(bytes(doc.uid).length != 0);
+        require(doc.amount != 0);
+        _;
+    }
+}
+
+
+contract DLT_5 is root, user, document{
+
+
+
+    mapping (address => uint) casinos;
+
+
+
+    enum ErrorCodes {
+        NOT_ROOT, ALREADY_EXISTS
+    }
+
+    enum TransactionType {
+        TRANSFER, MINT, ENROLL, BURN, USE, RETURN, HOLD
+    }
+
+    function DLT_5() public {
+
+    }
+
+    event Transaction(
+        TransactionType txType,
+        address sender,
+        address receiver,
+        uint amount,
+        string documentUID,
+        bytes32 user,
+        uint quantity,
+        bytes32 executor
+        );
+
+    function addCasino(address casinoAddress) public
+        onlyRoot
+    {
+        require (casinos[casinoAddress] == 0);
+        casinos[casinoAddress] = 0;
+    }
+
+    function addUser(string userName, address active, address passive) public
+        onlyRoot
+    {
+        bytes32 userNameHash = keccak256(userName);
+        require(users[userNameHash].balance.active.addr == address(0x0));
+        users[userNameHash] = UserData(UserBalance(Balance(active, 0), Balance(passive, 0)));
+    }
+
+    function enrollRequest(string userName, uint amount, string documentUID, uint quantity) public
+        onlyRoot
+        onlyExistedUser (userName)
+        onlyDocumented(Document(documentUID, quantity))
+        onlyUniqueDocument(userName, documentUID)
+    {
+        require(amount > 0);
+
+        bytes32 userNameHash = keccak256(userName);
+        users[userNameHash].balance.passive.amount += amount;
+        users[userNameHash].docLog[keccak256(documentUID)] = DocLog(block.number, amount, quantity);
+        emit Transaction(
+            TransactionType.MINT,
+            getRooter(),
+            users[userNameHash].balance.passive.addr,
+            amount,
+            documentUID,
+            userNameHash,
+            quantity,
+            userNameHash);
+    }
+
+    function enroll(string userName, uint amount, string documentUID, uint quantity) public
+        onlyRoot
+        onlyExistedUser (userName)
+        onlyExistedDocument(userName, documentUID, amount)
+    {
+        require(amount > 0);
+        bytes32 userNameHash = keccak256(userName);
+        require(users[userNameHash].balance.passive.amount >= amount);
+        moveToActive(userName, amount);
+        delete(users[userNameHash].docLog[keccak256(documentUID)]);
+        emit Transaction(
+            TransactionType.ENROLL,
+            users[userNameHash].balance.passive.addr,
+            users[userNameHash].balance.active.addr,
+            amount,
+            documentUID,
+            userNameHash,
+            quantity,
+            userNameHash);
+    }
+
+    function moveToActive(string userName, uint amount) private {
+        bytes32 userNameHash = keccak256(userName);
+        users[userNameHash].balance.passive.amount -= amount;
+        users[userNameHash].balance.active.amount += amount;
+    }
+
+    function getActiveBalance(string userName) public view
+        onlyRoot
+        returns (uint amount)
+    {
+        bytes32 userNameHash = keccak256(userName);
+        return users[userNameHash].balance.active.amount;
+    }
+
+    function getPassiveBalance(string userName) public view
+        onlyRoot
+        returns (uint amount)
+    {
+        bytes32 userNameHash = keccak256(userName);
+        return users[userNameHash].balance.passive.amount;
+    }
+
+    function getDocumentGenerationBlock(string userName, string documentUID) public view
+        onlyRoot
+        returns (uint blockNumber)
+    {
+        bytes32 userNameHash = keccak256(userName);
+        return users[userNameHash].docLog[keccak256(documentUID)].blockNumber;
+    }
+
+}

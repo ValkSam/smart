@@ -99,5 +99,27 @@ public class Web3jHelper {
         System.out.println("listenToBlocks unsubscribed");
     }
 
+    public void listenToContract(Action1<EthBlock> onNext, Integer blocks) {
+        CountDownLatch latch = new CountDownLatch(1);
+        Action0 onCompleted = () -> {
+            System.out.println("onCompleted");
+            latch.countDown();
+        };
+        Subscriber<EthBlock> subscriber = new ActionSubscriber<>(onNext, Actions.errorNotImplemented(), onCompleted);
+        Subscription subscription = web3jProvider.get()
+                .blockObservable(true)
+                .take(blocks)
+                .subscribe(subscriber);
+        try {
+            latch.await();
+        } catch (InterruptedException e) {
+            subscription.unsubscribe();
+            System.out.println("listenToBlocks interrupted");
+            return;
+        }
+        subscription.unsubscribe();
+        System.out.println("listenToBlocks unsubscribed");
+    }
+
 
 }

@@ -11,20 +11,16 @@ import java.math.BigInteger;
 
 public abstract class ContractOwnerOperation extends ContractOperation {
 
-    @Autowired
-    CredentialsHelper credentialsHelper;
-
     public ContractOwnerOperation(String userName,
                                   BigInteger amount,
                                   String documentUid,
                                   BigInteger documentAmount) {
-        super(null, userName, amount, documentUid, documentAmount);
+        super(userName, amount, documentUid, documentAmount);
     }
 
     @PostConstruct
     protected void init() throws IOException, CipherException {
-        this.credentials = credentialsHelper.getOwnerCredentials();
-        super.init();
+        this.contract = contractFactory.defaultOwnerContractBuilder().build();
     }
 
 }
