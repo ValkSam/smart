@@ -36,10 +36,12 @@ contract user {
 
     struct UserData {
         UserBalance balance;
+        bytes32[] docLogIndex;
         mapping(bytes32 => DocLog) docLog;
     }
 
     mapping (address => UserData) users;
+    address[] usersIndex;
 
     modifier onlyByUser(address indexAddress) {
         require (msg.sender == indexAddress);
@@ -83,6 +85,7 @@ contract document {
 
     modifier onlyDocumented(string documentUID) {
         require(bytes(documentUID).length != 0);
+        require(bytes(documentUID).length <= 32);
         _;
     }
 }
@@ -125,15 +128,16 @@ contract DLT_5 is root, user, document{
         casinos[casinoAddress] = 0;
     }
 
-    function registerUser(address indexAddress, address active, address passive, string documentUID, string details) public
-        onlyRoot
+    function registerMeAsUser(address indexAddress, address active, address passive, string documentUID, string details) public
+        onlyByUser(indexAddress)
     {
         require(users[indexAddress].balance.active.addr == address(0x0));
         require(indexAddress != active);
         require(indexAddress != passive);
         require(active != passive);
 
-        users[indexAddress] = UserData(UserBalance(Balance(active, 0), Balance(passive, 0)));
+        usersIndex.push(indexAddress);
+        users[indexAddress] = UserData(UserBalance(Balance(active, 0), Balance(passive, 0)), new bytes32[](0));
 
         emit Transaction(
             TransactionType.REGISTER_USER,
@@ -155,6 +159,7 @@ contract DLT_5 is root, user, document{
 
         users[indexAddress].balance.passive.amount += amount;
         users[indexAddress].docLog[keccak256(documentUID)] = DocLog(block.number, amount);
+        users[indexAddress].docLogIndex.push(stringToBytes32(documentUID));
 
         emit Transaction(
             TransactionType.MINT,
@@ -174,8 +179,9 @@ contract DLT_5 is root, user, document{
         require(amount > 0);
         require(users[indexAddress].balance.passive.amount >= amount);
 
+        removeFromDocLog(indexAddress, documentUID);
+
         moveToActive(indexAddress, amount);
-        delete(users[indexAddress].docLog[keccak256(documentUID)]);
 
         emit Transaction(
             TransactionType.ENROLL,
@@ -185,6 +191,13 @@ contract DLT_5 is root, user, document{
             amount,
             documentUID,
             details);
+    }
+
+    function removeFromDocLog(address indexAddress, string documentUID) private {
+        uint idx = getArrayItemIndex(users[indexAddress].docLogIndex, documentUID);
+        require(idx > 0);
+        delete(users[indexAddress].docLog[keccak256(documentUID)]);
+        removeArrayItem(users[indexAddress].docLogIndex, idx-1);
     }
 
     function moveToActive(address indexAddress, uint amount) private {
@@ -212,19 +225,60 @@ contract DLT_5 is root, user, document{
     {
         return users[indexAddress].balance.passive.addr;
     }
-    
-    function getPassiveBalance(address indexAddress) public view 
+
+    function getPassiveBalance(address indexAddress) public view
         onlyRoot
-        returns (uint amount) 
+        returns (uint amount)
     {
         return users[indexAddress].balance.passive.amount;
     }
-    
-    function getDocumentGenerationBlock(address indexAddress, string documentUID) public view 
+
+    function getDocumentGenerationBlock(address indexAddress, string documentUID) public view
         onlyRoot
-        returns (uint blockNumber) 
+        returns (uint blockNumber)
     {
         return users[indexAddress].docLog[keccak256(documentUID)].blockNumber;
     }
+
+    function getDocumentsUIDs(address indexAddress) public view
+        onlyRoot
+        returns (bytes32[] documentUIDs)
+    {
+        return users[indexAddress].docLogIndex;
+    }
+
+    function stringToBytes32(string source) private pure returns (bytes32 result) {
+        if (bytes(source).length == 0) {
+            return 0x0;
+        }
+
+        assembly {
+            result := mload(add(source, 32))
+        }
+    }
+
+    function getArrayItemIndex(bytes32[] storage array, string value) private view returns (uint index){
+        bytes32 valueToSearch = stringToBytes32(value);
+
+        for (uint i = 0; i<array.length; i++){
+            if (array[i] == valueToSearch){
+                return i+1;
+                break;
+            }
+        }
+
+        return 0;
+    }
+
+    function removeArrayItem(bytes32[] storage array, uint index) private {
+        if (index >= array.length) return;
+
+        for (uint i = index; i<array.length-1; i++){
+            array[i] = array[i+1];
+        }
+
+        array.length--;
+    }
+
 
 }
