@@ -1,4 +1,4 @@
-package web3j.example.web3jdemo.blockchain;
+package web3j.example.web3jdemo.blockchain.config;
 
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.ConnectionPool;

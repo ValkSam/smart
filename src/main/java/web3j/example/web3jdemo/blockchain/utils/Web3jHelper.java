@@ -29,13 +29,11 @@ public class Web3jHelper {
     private final Web3jProvider web3jProvider;
     private final Web3j web3j;
 
-
     @Autowired
     public Web3jHelper(Web3jProvider web3jProvider) throws IOException {
         this.web3jProvider = web3jProvider;
         this.web3j = web3jProvider.get();
     }
-
 
     public String getWeb3ClientVersion() throws IOException {
         Web3ClientVersion web3ClientVersion = web3j.web3ClientVersion().send();
@@ -63,7 +61,6 @@ public class Web3jHelper {
     }
 
     public EthBlock getBlock(Web3j web3j, DefaultBlockParameter defaultBlockParameter) {
-
         EthBlock latestEthBlock;
         try {
             latestEthBlock = web3j.ethGetBlockByNumber(defaultBlockParameter, false).send();
@@ -98,28 +95,5 @@ public class Web3jHelper {
         subscription.unsubscribe();
         System.out.println("listenToBlocks unsubscribed");
     }
-
-    public void listenToContract(Action1<EthBlock> onNext, Integer blocks) {
-        CountDownLatch latch = new CountDownLatch(1);
-        Action0 onCompleted = () -> {
-            System.out.println("onCompleted");
-            latch.countDown();
-        };
-        Subscriber<EthBlock> subscriber = new ActionSubscriber<>(onNext, Actions.errorNotImplemented(), onCompleted);
-        Subscription subscription = web3jProvider.get()
-                .blockObservable(true)
-                .take(blocks)
-                .subscribe(subscriber);
-        try {
-            latch.await();
-        } catch (InterruptedException e) {
-            subscription.unsubscribe();
-            System.out.println("listenToBlocks interrupted");
-            return;
-        }
-        subscription.unsubscribe();
-        System.out.println("listenToBlocks unsubscribed");
-    }
-
 
 }

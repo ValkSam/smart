@@ -6,7 +6,7 @@ import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.WalletUtils;
 import org.web3j.utils.Numeric;
-import web3j.example.web3jdemo.blockchain.EthereumConfig;
+import web3j.example.web3jdemo.blockchain.config.EthereumConfig;
 
 import java.io.IOException;
 import java.math.BigInteger;

@@ -18,6 +18,8 @@ ethereum:
       wallet:
         file: c:/DEVELOPING/Etherium/devnet/node1/keystore/UTC--2018-04-02T13-30-36.958062800Z--a5c233471f6dd13a2f98a54badcf21d85605649a
         password: pwdnode1;
+    transactionManager:
+        custom: false
   admin:
     wallet: "0xfba2068908057b811a0a9623f072dd2f6455748a"
   cryptocurrency:

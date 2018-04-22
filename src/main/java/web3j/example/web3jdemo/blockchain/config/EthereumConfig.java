@@ -1,4 +1,4 @@
-package web3j.example.web3jdemo.blockchain;
+package web3j.example.web3jdemo.blockchain.config;
 
 
 import lombok.Getter;
@@ -74,6 +74,9 @@ public class EthereumConfig {
 
     @Value("${ethereum.contract.owner.wallet.password}")
     private String contractOwnerWalletPassword;
+
+    @Value("${ethereum.contract.transactionManager.custom}")
+    private Boolean useCustomTransactionManager;
 
     public BigInteger getDefaultGasLimit() {
         return BigInteger.valueOf(cryptocurrencyContractGasLimit);

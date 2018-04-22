@@ -5,11 +5,13 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
+import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.io.IOException;
 import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static web3j.example.web3jdemo.domain.AddressType.PASSIVE;
 
@@ -24,6 +26,16 @@ public class EnrollOperation extends ContractUserOperation {
                            String documentUid,
                            String data) {
         super(FUNC_NAME, dldWallet, PASSIVE, amount, documentUid, data);
+    }
+
+    public EnrollOperation(DldWallet dldWallet,
+                           BigInteger amount,
+                           String documentUid,
+                           String data,
+                           Consumer<DldContract.TransactionEventResponse> onSuccess,
+                           Consumer<TransactionReceipt> onReject,
+                           Consumer<Exception> onError) {
+        super(FUNC_NAME, dldWallet, PASSIVE, amount, documentUid, data, onSuccess, onReject, onError);
     }
 
     @Override

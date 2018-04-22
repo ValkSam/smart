@@ -10,7 +10,12 @@ import web3j.example.web3jdemo.contract.wrapper.DldContract;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
+
+import static java.lang.Integer.decode;
+import static java.util.Objects.isNull;
 
 public abstract class ContractOperation {
 
@@ -25,8 +30,25 @@ public abstract class ContractOperation {
     protected DefaultContractFactory contractFactory;
     protected int attemptCount = 0;
     protected DldContract contract;
-
+    Consumer<Exception> onError;
     private Exception lastException;
+    private LocalDateTime startDate = LocalDateTime.now();
+    private Consumer<DldContract.TransactionEventResponse> onSuccess;
+    private Consumer<TransactionReceipt> onReject;
+
+    public ContractOperation(String functionName,
+                             String addressIndex,
+                             BigInteger amount,
+                             String documentUid,
+                             String data,
+                             Consumer<DldContract.TransactionEventResponse> onSuccess,
+                             Consumer<TransactionReceipt> onReject,
+                             Consumer<Exception> onError) {
+        this(functionName, addressIndex, amount, documentUid, data);
+        this.onSuccess = onSuccess;
+        this.onReject = onReject;
+        this.onError = onError;
+    }
 
     public ContractOperation(String functionName,
                              String addressIndex,
@@ -45,6 +67,9 @@ public abstract class ContractOperation {
 
     protected final CompletableFuture<TransactionReceipt> execute(RemoteCall<TransactionReceipt> remoteCall) throws IOException, TransactionException {
         if (attemptCount > MAX_ATTEMPTS_COUNT) {
+            if (!isNull(onError)) {
+                onError.accept(lastException);
+            }
             String message = functionName + " >>>>>>>>> I have not been able to execute !" + Thread.currentThread().getName() + " : " + lastException.getMessage();
             System.out.println(message);
             throw new RuntimeException(message);
@@ -54,17 +79,28 @@ public abstract class ContractOperation {
             System.out.println(functionName + " >>>>>>>>>> start: " + Thread.currentThread().getName());
             receipt = remoteCall.send();
             System.out.println(functionName + " >>>>>>>>>> end: " + Thread.currentThread().getName());
+            if (decode(receipt.getStatus()) == 1 && !isNull(onSuccess)) {
+                onSuccess.accept(contract.getTransactionEvents(receipt).get(0));
+            }
+            if (decode(receipt.getStatus()) == 0 && !isNull(onReject)) {
+                onReject.accept(receipt);
+            }
             return CompletableFuture.completedFuture(receipt);
         } catch (Exception e) {
-            System.out.println(functionName + " failed " + Thread.currentThread().getName());
-            lastException = e;
-            try {
-                Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
-            } catch (InterruptedException e1) {
-                e1.printStackTrace();
+            if (!isNull(e.getMessage()) && e.getMessage().contains("replacement transaction underpriced")) {
+                System.out.println(functionName + " failed " + Thread.currentThread().getName());
+                lastException = e;
+                try {
+                    Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
+                } catch (InterruptedException e1) {
+                    e1.printStackTrace();
+                }
+                attemptCount++;
+            } else {
+                attemptCount = MAX_ATTEMPTS_COUNT + 1;
             }
-            attemptCount++;
             return this.execute(remoteCall);
+
         }
     }
 

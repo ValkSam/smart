@@ -5,10 +5,12 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
+import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 import static java.math.BigInteger.ZERO;
 import static web3j.example.web3jdemo.domain.AddressType.INDEX;
@@ -23,6 +25,15 @@ public class RegisterUserOperation extends ContractUserOperation {
                                  String documentUid,
                                  String data) {
         super(FUNC_NAME, dldWallet, INDEX, ZERO, documentUid, data);
+    }
+
+    public RegisterUserOperation(DldWallet dldWallet,
+                                 String documentUid,
+                                 String data,
+                                 Consumer<DldContract.TransactionEventResponse> onSuccess,
+                                 Consumer<TransactionReceipt> onReject,
+                                 Consumer<Exception> onError) {
+        super(FUNC_NAME, dldWallet, INDEX, ZERO, documentUid, data, onSuccess, onReject, onError);
     }
 
     @Override

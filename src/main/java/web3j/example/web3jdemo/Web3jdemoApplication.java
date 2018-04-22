@@ -8,6 +8,7 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.web3j.crypto.CipherException;
 import org.web3j.protocol.core.DefaultBlockParameter;
+import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 import static java.lang.String.format;
 
@@ -63,15 +65,34 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         DldContract contract = defaultContractFactory.defaultSingletonOwnerContractBuilder().build();
 
-//        listenToEvent(contract);
+//        listenToEvent(contract, BigInteger.valueOf(41500));
 
 //        registerUserOne();
+
+        Consumer<DldContract.TransactionEventResponse> onExecute = (event) -> {
+            System.out.println("@@@@@@");
+            System.out.println(ConvertHelper.TransactionEventResponseToString(event));
+            System.out.println("@@@@@@");
+        };
+
+        Consumer<TransactionReceipt> onReject = (receipt) -> {
+            System.out.println("^^^^^");
+            System.out.println(receipt);
+            System.out.println("^^^^^");
+        };
+
+        Consumer<Exception> onError = (exception) -> {
+            System.out.println("******> " + exception.getMessage());
+        };
 
         ContractOperation enrollRequestOperation1 = contractOperationFactory.enrollRequestOperation(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(11L),
                 "doc_7" + '\u241F' + "5",
-                "{\"invoiceAmount\":110}");
+                "{\"invoiceAmount\":110}",
+                onExecute,
+                onReject,
+                onError);
 
         CompletableFuture<TransactionReceipt> receipt1 = enrollRequestOperation1.execute();
 //        receipt1.get();
@@ -82,13 +103,17 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(12L),
                 "doc_8" + '\u241F' + "5",
-                "{\"invoiceAmount\":120}")
+                "{\"invoiceAmount\":120}",
+                onExecute,
+                onReject,
+                onError)
                 .execute();
 //        receipt2.get();
 
         System.out.println("*************************************");
 
-        //        if (1 == 1) return;
+        delay(20000);
+        if (1 == 1) return;
 
         CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.enrollOperation(
                 dldWalletService.getWalletOne(),
@@ -121,10 +146,10 @@ public class Web3jdemoApplication implements CommandLineRunner {
         }
     }
 
-    private void listenToEvent(DldContract contract) {
+    private void listenToEvent(DldContract contract, BigInteger blockNumber) {
         contract.transactionEventObservable(
-                DefaultBlockParameter.valueOf(BigInteger.valueOf(28096)),
-                DefaultBlockParameter.valueOf(BigInteger.valueOf(Integer.MAX_VALUE)))
+                DefaultBlockParameter.valueOf(blockNumber),
+                DefaultBlockParameter.valueOf(DefaultBlockParameterName.LATEST.name()))
                 .subscribe(event -> {
                     System.out.println("######");
                     System.out.println(ConvertHelper.TransactionEventResponseToString(event));
