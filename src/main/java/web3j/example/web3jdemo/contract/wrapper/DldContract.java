@@ -55,6 +55,22 @@ public class DldContract extends Contract {
         super(BINARY, contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
+    public static RemoteCall<DldContract> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+        return deployRemoteCall(DldContract.class, web3j, credentials, gasPrice, gasLimit, BINARY, "");
+    }
+
+    public static RemoteCall<DldContract> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+        return deployRemoteCall(DldContract.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, "");
+    }
+
+    public static DldContract load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
+        return new DldContract(contractAddress, web3j, credentials, gasPrice, gasLimit);
+    }
+
+    public static DldContract load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
+        return new DldContract(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
+    }
+
     public List<TransactionEventResponse> getTransactionEvents(TransactionReceipt transactionReceipt) {
         final Event event = new Event("Transaction",
                 Arrays.<TypeReference<?>>asList(),
@@ -219,22 +235,6 @@ public class DldContract extends Contract {
                 Arrays.<TypeReference<?>>asList(new TypeReference<Uint256>() {
                 }));
         return executeRemoteCallSingleValueReturn(function, BigInteger.class);
-    }
-
-    public static RemoteCall<DldContract> deploy(Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
-        return deployRemoteCall(DldContract.class, web3j, credentials, gasPrice, gasLimit, BINARY, "");
-    }
-
-    public static RemoteCall<DldContract> deploy(Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
-        return deployRemoteCall(DldContract.class, web3j, transactionManager, gasPrice, gasLimit, BINARY, "");
-    }
-
-    public static DldContract load(String contractAddress, Web3j web3j, Credentials credentials, BigInteger gasPrice, BigInteger gasLimit) {
-        return new DldContract(contractAddress, web3j, credentials, gasPrice, gasLimit);
-    }
-
-    public static DldContract load(String contractAddress, Web3j web3j, TransactionManager transactionManager, BigInteger gasPrice, BigInteger gasLimit) {
-        return new DldContract(contractAddress, web3j, transactionManager, gasPrice, gasLimit);
     }
 
     public static class TransactionEventResponse {

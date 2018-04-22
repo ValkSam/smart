@@ -16,10 +16,9 @@ import java.io.IOException;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class DefaultUserContractBuilder extends DefaultContractBuilder {
 
+    private final String privateKey;
     @Autowired
     private CredentialsHelper credentialsHelper;
-
-    private final String privateKey;
 
     public DefaultUserContractBuilder(DldWallet dldWallet, AddressType senderAddressType) {
         switch (senderAddressType) {

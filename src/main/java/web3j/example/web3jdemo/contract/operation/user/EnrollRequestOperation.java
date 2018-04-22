@@ -17,21 +17,22 @@ import static web3j.example.web3jdemo.domain.AddressType.INDEX;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class EnrollRequestOperation extends ContractUserOperation {
 
+    private static final String FUNC_NAME = "ENROLL_REQUEST";
+
     public EnrollRequestOperation(DldWallet dldWallet,
                                   BigInteger amount,
                                   String documentUid,
                                   String data) {
-        super(dldWallet, INDEX, amount, documentUid, data);
+        super(FUNC_NAME, dldWallet, INDEX, amount, documentUid, data);
     }
 
     @Override
     public CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException {
-//        return CompletableFuture.supplyAsync(TransactionReceipt::new);
-        return contract.enrollRequest(
+        return execute(contract.enrollRequest(
                 addressIndex,
                 amount,
-                documentNumber,
-                data).sendAsync();
+                documentUID,
+                data));
     }
 
 }

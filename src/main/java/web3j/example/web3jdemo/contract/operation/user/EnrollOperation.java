@@ -17,21 +17,22 @@ import static web3j.example.web3jdemo.domain.AddressType.PASSIVE;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class EnrollOperation extends ContractUserOperation {
 
+    private static final String FUNC_NAME = "ENROLL";
+
     public EnrollOperation(DldWallet dldWallet,
                            BigInteger amount,
                            String documentUid,
                            String data) {
-        super(dldWallet, PASSIVE, amount, documentUid, data);
+        super(FUNC_NAME, dldWallet, PASSIVE, amount, documentUid, data);
     }
 
     @Override
     public CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException {
-//        return CompletableFuture.supplyAsync(TransactionReceipt::new);
-        return contract.enroll(
+        return execute(contract.enroll(
                 addressIndex,
                 amount,
-                documentNumber,
-                data).sendAsync();
+                documentUID,
+                data));
     }
 
 }

@@ -5,10 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
+import org.springframework.scheduling.annotation.EnableAsync;
 import org.web3j.crypto.CipherException;
 import org.web3j.protocol.core.DefaultBlockParameter;
-import org.web3j.protocol.core.DefaultBlockParameterName;
-import org.web3j.protocol.core.methods.request.EthFilter;
 import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
@@ -29,6 +28,7 @@ import java.util.concurrent.ExecutionException;
 import static java.lang.String.format;
 
 @SpringBootApplication
+@EnableAsync
 @Slf4j
 public class Web3jdemoApplication implements CommandLineRunner {
 
@@ -61,35 +61,11 @@ public class Web3jdemoApplication implements CommandLineRunner {
     public void run(String... args) throws IOException, InterruptedException, TransactionException, CipherException, ExecutionException {
         log.info(format(APP_MESSAGE_PATTERN, web3jHelper.getWeb3ClientVersion()));
 
-
-        Action1<EthBlock> onNext = (block) -> {
-            System.out.println(block.getBlock().getNumber());
-            block.getBlock().getTransactions().forEach(tx -> {
-                tx.get();
-            });
-        };
-
         DldContract contract = defaultContractFactory.defaultSingletonOwnerContractBuilder().build();
 
-//        if (1 == 1) return;
+//        listenToEvent(contract);
 
-        contract.transactionEventObservable(
-                DefaultBlockParameter.valueOf(BigInteger.valueOf(28096)),
-//                DefaultBlockParameter.valueOf(BigInteger.ZERO),
-                DefaultBlockParameter.valueOf(BigInteger.valueOf(Integer.MAX_VALUE)))
-                .subscribe(event -> {
-                    System.out.println("######");
-                    System.out.println(ConvertHelper.TransactionEventResponseToString(event));
-                    System.out.println("######");
-                });
-
-        ContractOperation enrollRequestOperation0 = contractOperationFactory.registerUserOperation(
-                dldWalletService.getWalletOne(),
-                "2000",
-                "{\"userId\":2000}");
-
-        CompletableFuture<TransactionReceipt> receipt0 = enrollRequestOperation0.execute();
-        System.out.println(receipt0.get());
+//        registerUserOne();
 
         ContractOperation enrollRequestOperation1 = contractOperationFactory.enrollRequestOperation(
                 dldWalletService.getWalletOne(),
@@ -98,9 +74,9 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "{\"invoiceAmount\":110}");
 
         CompletableFuture<TransactionReceipt> receipt1 = enrollRequestOperation1.execute();
-        receipt1.get();
-//        DldContract.TransactionEventResponse transactionEventResponse1 = contract.getTransactionEvents(receipt1.get()).get(0);
-//        System.out.println(ConvertHelper.TransactionEventResponseToString(transactionEventResponse1));
+//        receipt1.get();
+
+        delay(100);
 
         CompletableFuture<TransactionReceipt> receipt2 = contractOperationFactory.enrollRequestOperation(
                 dldWalletService.getWalletOne(),
@@ -108,9 +84,11 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_8" + '\u241F' + "5",
                 "{\"invoiceAmount\":120}")
                 .execute();
-        receipt2.get();
+//        receipt2.get();
 
         System.out.println("*************************************");
+
+        //        if (1 == 1) return;
 
         CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.enrollOperation(
                 dldWalletService.getWalletOne(),
@@ -128,21 +106,53 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 .execute();
         receipt4.get();
 
-        web3jHelper.listenToBlocks(onNext, 2);
+//        listenToBlocks();
 
-        EthFilter filter = new EthFilter(DefaultBlockParameterName.EARLIEST,
-                DefaultBlockParameterName.LATEST, "0x978A5DfD109fE59C6250549D3Dc5602B0B731839");
+//        EthFilter filter = new EthFilter(DefaultBlockParameterName.EARLIEST,
+//                DefaultBlockParameterName.LATEST, "0x978A5DfD109fE59C6250549D3Dc5602B0B731839");
 
-
-
-        /*BigInteger lastBlockNumber = null;
-        while (true) {
-            BigInteger blockNumber = web3jHelper.getLatestBlockNumber();
-            if (!blockNumber.equals(lastBlockNumber)) {
-                lastBlockNumber = blockNumber;
-                log.info(format(APP_MESSAGE_PATTERN, blockNumber));
-            }
-        }*/
     }
+
+    private void delay(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException e1) {
+            e1.printStackTrace();
+        }
+    }
+
+    private void listenToEvent(DldContract contract) {
+        contract.transactionEventObservable(
+                DefaultBlockParameter.valueOf(BigInteger.valueOf(28096)),
+                DefaultBlockParameter.valueOf(BigInteger.valueOf(Integer.MAX_VALUE)))
+                .subscribe(event -> {
+                    System.out.println("######");
+                    System.out.println(ConvertHelper.TransactionEventResponseToString(event));
+                    System.out.println("######");
+                });
+    }
+
+    private void registerUserOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
+        ContractOperation enrollRequestOperation0 = contractOperationFactory.registerUserOperation(
+                dldWalletService.getWalletOne(),
+                "2000",
+                "{\"userId\":2000}");
+
+        CompletableFuture<TransactionReceipt> receipt0 = enrollRequestOperation0.execute();
+        System.out.println(receipt0.get());
+    }
+
+    private void listenToBlocks() {
+        Action1<EthBlock> onNext = (block) -> {
+            System.out.println(block.getBlock().getNumber());
+            block.getBlock().getTransactions().forEach(tx -> {
+                tx.get();
+            });
+        };
+        web3jHelper.listenToBlocks(onNext, 2);
+    }
+
+    //        DldContract.TransactionEventResponse transactionEventResponse1 = contract.getTransactionEvents(receipt1.get()).get(0);
+//        System.out.println(ConvertHelper.TransactionEventResponseToString(transactionEventResponse1));
 
 }

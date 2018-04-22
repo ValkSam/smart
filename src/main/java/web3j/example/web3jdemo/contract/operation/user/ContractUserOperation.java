@@ -14,12 +14,13 @@ public abstract class ContractUserOperation extends ContractOperation {
     protected final DldWallet dldWallet;
     private final AddressType senderAddressType;
 
-    public ContractUserOperation(DldWallet dldWallet,
+    public ContractUserOperation(String functionName,
+                                 DldWallet dldWallet,
                                  AddressType senderAddressType,
                                  BigInteger amount,
                                  String documentUid,
                                  String data) {
-        super(dldWallet.getAddressIndex(), amount, documentUid, data);
+        super(functionName, dldWallet.getAddressIndex(), amount, documentUid, data);
         this.dldWallet = dldWallet;
         this.senderAddressType = senderAddressType;
     }
