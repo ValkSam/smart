@@ -82,7 +82,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
         };
 
         Consumer<Exception> onError = (exception) -> {
-            System.out.println("******> " + exception.getMessage());
+            System.out.println(" >>>>>>>>> I have not been able to execute !" + Thread.currentThread().getName() + " due to: " + exception.getMessage());
         };
 
         ContractOperation enrollRequestOperation1 = contractOperationFactory.enrollRequestOperation(
@@ -112,7 +112,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         System.out.println("*************************************");
 
-        delay(20000);
+        delay(5000);
         if (1 == 1) return;
 
         CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.enrollOperation(

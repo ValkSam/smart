@@ -19,7 +19,7 @@ import static java.util.Objects.isNull;
 
 public abstract class ContractOperation {
 
-    private static final Integer MAX_ATTEMPTS_COUNT = 10;
+    private static final Integer MAX_ATTEMPTS_COUNT = 1;
     private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 300;
     protected final String functionName;
     protected final String addressIndex;
@@ -70,9 +70,7 @@ public abstract class ContractOperation {
             if (!isNull(onError)) {
                 onError.accept(lastException);
             }
-            String message = functionName + " >>>>>>>>> I have not been able to execute !" + Thread.currentThread().getName() + " : " + lastException.getMessage();
-            System.out.println(message);
-            throw new RuntimeException(message);
+            throw new RuntimeException("");
         }
         TransactionReceipt receipt;
         try {
@@ -87,9 +85,9 @@ public abstract class ContractOperation {
             }
             return CompletableFuture.completedFuture(receipt);
         } catch (Exception e) {
+            lastException = e;
             if (!isNull(e.getMessage()) && e.getMessage().contains("replacement transaction underpriced")) {
                 System.out.println(functionName + " failed " + Thread.currentThread().getName());
-                lastException = e;
                 try {
                     Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
                 } catch (InterruptedException e1) {

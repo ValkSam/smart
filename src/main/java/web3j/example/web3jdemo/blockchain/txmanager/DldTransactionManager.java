@@ -41,7 +41,7 @@ public class DldTransactionManager extends TransactionManager {
 
     private BigInteger getNonce(Web3j web3j, Credentials credentials) throws IOException {
         EthGetTransactionCount ethGetTransactionCount = web3j.ethGetTransactionCount(
-                credentials.getAddress(), DefaultBlockParameterName.LATEST).send();
+                credentials.getAddress(), DefaultBlockParameterName.PENDING).send();
 
         return ethGetTransactionCount.getTransactionCount();
     }

@@ -36,6 +36,7 @@ public abstract class ContractBuilder {
         this.setWeb3j(web3jProvider.get());
         return DldContract.load(contractAddress,
                 web3j,
+//credentials,
                 transactionManagerFactory.transactionManager(web3j, credentials),
                 gasPrice,
                 gasLimit);

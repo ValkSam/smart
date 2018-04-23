@@ -10,7 +10,7 @@ ethereum:
       maxIdleTimeSeconds: 300 # IMPORTANT!!! Should be less than server.connection-timeout
       readTimeoutSeconds: 300
       connectionTimeoutSeconds: 30
-    url: http://localhost:8502
+    url: http://localhost:8501
   contract:
     address: "0x853653CDa9c7969722D8d2DF2a34BCd5fe4528F7"
     owner:
@@ -25,7 +25,7 @@ ethereum:
   cryptocurrency:
     initial-supply: 1000000000000
     address: "0xa411245be2139e5081e75580b4ce09234c510fc0"
-    gas-price: 20000000000
+    gas-price: 2
     gas-limit: 4300000
   mint-coins:
     default-comment: "Coins were successfully minted."
