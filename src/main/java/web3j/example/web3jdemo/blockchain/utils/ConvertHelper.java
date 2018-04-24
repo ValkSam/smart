@@ -11,7 +11,7 @@ public class ConvertHelper {
         return DatatypeConverter.printHexBinary(bytes);
     }
 
-    public static String TransactionEventResponseToString(DldContract.TransactionEventResponse response) {
+    public static String TransactionEventResponseToString(DldContract.TransferEventResponse response) {
         return "TransactionEventResponse{" +
                 "log=" + response.log +
                 ", txType=" + response.txType +

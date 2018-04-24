@@ -9,12 +9,12 @@ import java.math.BigInteger;
 
 public abstract class ContractOwnerOperation extends ContractOperation {
 
-    public ContractOwnerOperation(String functionName,
+    public ContractOwnerOperation(ContractActionType contractActionType,
                                   String addressIndex,
                                   BigInteger amount,
                                   String documentUid,
                                   String data) {
-        super(functionName, addressIndex, amount, documentUid, data);
+        super(contractActionType, data);
     }
 
     @PostConstruct

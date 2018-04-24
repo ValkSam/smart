@@ -1,7 +1,21 @@
 pragma solidity ^0.4.21;
 
+contract utilAware {
+
+    function stringToBytes32(string self) public pure returns (bytes32 result) {
+        if (bytes(self).length == 0) {
+            return "";
+        }
+
+        assembly {
+            result := mload(add(self, 32))
+        }
+    }
+
+}
 
 contract root {
+
     address private rooter;
 
     function root() public{
@@ -16,15 +30,43 @@ contract root {
         require (msg.sender == rooter);
         _;
     }
+
 }
 
 contract eventAware {
 
     enum TransactionType {
-        REGISTER_CASINO, REGISTER_USER, TRANSFER, MINT, ENROLL, BURN, DEPOSIT, WITHDRAW, HOLD
+        REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, BUY, SELL, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST
     }
 
-    event Transaction(
+}
+
+
+contract eventRegisterAware is eventAware {
+
+    event Register(
+        TransactionType txType,
+        address registeredAddress,
+        string details
+        );
+
+}
+
+contract eventRegisterDocumentAware is eventAware {
+
+    event RegisterDocument(
+        TransactionType txType,
+        address user,
+        string documentUID,
+        uint amount,
+        string details
+        );
+
+}
+
+contract eventTransferAware is eventAware {
+
+    event Transfer(
         TransactionType txType,
         address user,
         address sender,
@@ -36,7 +78,20 @@ contract eventAware {
 
 }
 
-contract user is eventAware {
+contract eventMintAware is eventAware {
+
+    event Mint(
+        TransactionType txType,
+        address user,
+        address mintedAddress,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+}
+
+contract user is root, utilAware, eventRegisterAware {
 
     struct Balance {
         address addr;
@@ -63,7 +118,7 @@ contract user is eventAware {
     mapping (address => UserData) users;
     address[] usersIndex;
 
-    function registerMeAsUser(address indexAddress, address active, address passive, string documentUID, string details) public
+    function registerMeAsUser(address indexAddress, address active, address passive, string details) public
         onlyByUser(indexAddress)
     {
         require(users[indexAddress].balance.active.addr == address(0x0));
@@ -79,18 +134,49 @@ contract user is eventAware {
                 docLogIndex: new bytes32[](0)
             });
 
-        emit Transaction(
+        emit Register(
             TransactionType.REGISTER_USER,
             indexAddress,
-            users[indexAddress].balance.active.addr,
-            users[indexAddress].balance.passive.addr,
-            0,
-            documentUID,
             details);
+    }
+
+    function removeFromDocLog(address indexAddress, string documentUID) public {
+        uint idx = getArrayItemIndex(users[indexAddress].docLogIndex, documentUID);
+        assert(idx == uint(-1));
+        delete(users[indexAddress].docLog[keccak256(documentUID)]);
+        removeArrayItem(users[indexAddress].docLogIndex, idx);
+    }
+
+    function getArrayItemIndex(bytes32[] storage self, string value) private view returns (uint index){
+        bytes32 valueToSearch = stringToBytes32(value);
+
+        for (uint i = 0; i<self.length; i++){
+            if (self[i] == valueToSearch){
+                return i;
+                break;
+            }
+        }
+
+        return uint(-1);
+    }
+
+    function removeArrayItem(bytes32[] storage self, uint index) private {
+        if (index >= self.length) return;
+
+        for (uint i = index; i<self.length-1; i++){
+            self[i] = self[i+1];
+        }
+
+        self.length--;
     }
 
     modifier onlyByUser(address indexAddress) {
         require (msg.sender == indexAddress);
+        _;
+    }
+
+    modifier onlyByUserOrRooter(address indexAddress) {
+        require (msg.sender == indexAddress || msg.sender == getRooter());
         _;
     }
 
@@ -125,14 +211,14 @@ contract user is eventAware {
     }
 }
 
-contract casino is eventAware{
+contract casino is eventRegisterAware{
 
     struct CasinoData {
         bool isActive;
         uint amount;
     }
 
-    function registerMeAsCasino(address casinoAddress, string documentUID, string details) public
+    function registerMeAsCasino(address casinoAddress, string details) public
         onlyByCasino(casinoAddress)
     {
         require(getArrayItemIndex(casinosIndex, casinoAddress) == uint(-1));
@@ -144,13 +230,9 @@ contract casino is eventAware{
                 amount: 0
             });
 
-        emit Transaction(
+        emit Register(
             TransactionType.REGISTER_CASINO,
             casinoAddress,
-            casinoAddress,
-            casinoAddress,
-            0,
-            documentUID,
             details);
     }
 
@@ -183,11 +265,41 @@ contract casino is eventAware{
 
 }
 
-contract document {
+contract document is user, eventRegisterDocumentAware {
 
-    struct Document {
-        string uid;
-        string details;
+    function registerEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyExistedUser(indexAddress)
+        onlyDocumented(documentUID)
+        onlyUniqueDocument(indexAddress, documentUID)
+    {
+        require(amount > 0);
+
+        users[indexAddress].docLog[keccak256(documentUID)] = DocLog(block.number, amount);
+        users[indexAddress].docLogIndex.push(stringToBytes32(documentUID));
+
+        emit RegisterDocument(
+            TransactionType.ENROLL_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function cancelEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUserOrRooter(indexAddress)
+        onlyDocumented(documentUID)
+        onlyExistedDocument(indexAddress, documentUID, amount)
+    {
+
+        removeFromDocLog(indexAddress, documentUID);
+
+        emit RegisterDocument(
+            TransactionType.CANCEL_ENROLL_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
     }
 
     modifier onlyDocumented(string documentUID) {
@@ -198,48 +310,26 @@ contract document {
 }
 
 
-contract DLT_5 is root, user, document, casino{
+contract DLT_5 is root, user, document, casino, eventTransferAware, eventMintAware {
 
     function DLT_5() public {
 
     }
 
-    function enrollRequest(address indexAddress, uint amount, string documentUID, string details) public
-        onlyByUser(indexAddress)
-        onlyDocumented(documentUID)
-        onlyUniqueDocument(indexAddress, documentUID)
-    {
-        require(amount > 0);
-
-        users[indexAddress].balance.passive.amount += amount;
-        users[indexAddress].docLog[keccak256(documentUID)] = DocLog(block.number, amount);
-        users[indexAddress].docLogIndex.push(stringToBytes32(documentUID));
-
-        emit Transaction(
-            TransactionType.MINT,
-            indexAddress,
-            indexAddress,
-            users[indexAddress].balance.passive.addr,
-            amount,
-            documentUID,
-            details);
-    }
-
     function enroll(address indexAddress, uint amount, string documentUID, string details) public
-        onlyByUserFromPassive(indexAddress)
+        onlyByUser(indexAddress)
+        onlyExistedUser(indexAddress)
         onlyExistedDocument(indexAddress, documentUID, amount)
     {
         require(amount > 0);
-        require(users[indexAddress].balance.passive.amount >= amount);
 
         removeFromDocLog(indexAddress, documentUID);
 
-        moveToActive(indexAddress, amount);
+        users[indexAddress].balance.active.amount += amount;
 
-        emit Transaction(
+        emit Mint(
             TransactionType.ENROLL,
             indexAddress,
-            users[indexAddress].balance.passive.addr,
             users[indexAddress].balance.active.addr,
             amount,
             documentUID,
@@ -256,8 +346,8 @@ contract DLT_5 is root, user, document, casino{
         casinos[casinoAddress].amount += amount;
         users[indexAddress].balance.active.amount -= amount;
 
-        emit Transaction(
-            TransactionType.DEPOSIT,
+        emit Transfer(
+            TransactionType.BUY,
             indexAddress,
             users[indexAddress].balance.active.addr,
             casinoAddress,
@@ -276,26 +366,14 @@ contract DLT_5 is root, user, document, casino{
         casinos[casinoAddress].amount -= amount;
         users[indexAddress].balance.active.amount += amount;
 
-        emit Transaction(
-            TransactionType.WITHDRAW,
+        emit Transfer(
+            TransactionType.SELL,
             indexAddress,
             casinoAddress,
             users[indexAddress].balance.active.addr,
             amount,
             documentUID,
             details);
-    }
-
-    function removeFromDocLog(address indexAddress, string documentUID) private {
-        uint idx = getArrayItemIndex(users[indexAddress].docLogIndex, documentUID);
-        assert(idx == uint(-1));
-        delete(users[indexAddress].docLog[keccak256(documentUID)]);
-        removeArrayItem(users[indexAddress].docLogIndex, idx);
-    }
-
-    function moveToActive(address indexAddress, uint amount) private {
-        users[indexAddress].balance.passive.amount -= amount;
-        users[indexAddress].balance.active.amount += amount;
     }
 
     function getActiveAddress(address indexAddress) public view
@@ -340,29 +418,6 @@ contract DLT_5 is root, user, document, casino{
         return users[indexAddress].docLogIndex;
     }
 
-    function stringToBytes32(string self) private pure returns (bytes32 result) {
-        if (bytes(self).length == 0) {
-            return "";
-        }
-
-        assembly {
-            result := mload(add(self, 32))
-        }
-    }
-
-    function getArrayItemIndex(bytes32[] storage self, string value) private view returns (uint index){
-        bytes32 valueToSearch = stringToBytes32(value);
-
-        for (uint i = 0; i<self.length; i++){
-            if (self[i] == valueToSearch){
-                return i;
-                break;
-            }
-        }
-
-        return uint(-1);
-    }
-
     function removeArrayItem(bytes32[] storage self, uint index) private {
         if (index >= self.length) return;
 
@@ -372,6 +427,5 @@ contract DLT_5 is root, user, document, casino{
 
         self.length--;
     }
-
 
 }

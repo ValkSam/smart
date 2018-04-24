@@ -1,5 +1,5 @@
 package web3j.example.web3jdemo.domain;
 
-public enum AddressType {
+public enum UserAddressType {
     INDEX, ACTIVE, PASSIVE;
 }

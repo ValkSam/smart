@@ -3,48 +3,41 @@ package web3j.example.web3jdemo.contract.operation.user;
 import org.web3j.crypto.CipherException;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.ContractOperation;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
-import web3j.example.web3jdemo.domain.AddressType;
+import web3j.example.web3jdemo.domain.UserAddressType;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.function.Consumer;
 
 public abstract class ContractUserOperation extends ContractOperation {
 
     protected final DldWallet dldWallet;
-    private final AddressType senderAddressType;
+    protected final UserAddressType senderUserAddressType;
 
-    public ContractUserOperation(String functionName,
+    public ContractUserOperation(ContractActionType contractActionType,
                                  DldWallet dldWallet,
-                                 AddressType senderAddressType,
-                                 BigInteger amount,
-                                 String documentUid,
+                                 UserAddressType senderUserAddressType,
                                  String data,
-                                 Consumer<DldContract.TransactionEventResponse> onSuccess,
                                  Consumer<TransactionReceipt> onReject,
                                  Consumer<Exception> onError) {
-        super(functionName, dldWallet.getAddressIndex(), amount, documentUid, data, onSuccess, onReject, onError);
+        super(contractActionType, data, onReject, onError);
         this.dldWallet = dldWallet;
-        this.senderAddressType = senderAddressType;
+        this.senderUserAddressType = senderUserAddressType;
     }
 
-    public ContractUserOperation(String functionName,
+    public ContractUserOperation(ContractActionType contractActionType,
                                  DldWallet dldWallet,
-                                 AddressType senderAddressType,
-                                 BigInteger amount,
-                                 String documentUid,
+                                 UserAddressType senderUserAddressType,
                                  String data) {
-        super(functionName, dldWallet.getAddressIndex(), amount, documentUid, data);
+        super(contractActionType, data);
         this.dldWallet = dldWallet;
-        this.senderAddressType = senderAddressType;
+        this.senderUserAddressType = senderUserAddressType;
     }
 
     @PostConstruct
     protected void init() throws IOException, CipherException {
-        this.contract = contractFactory.defaultUserContractBuilder(dldWallet, senderAddressType).build();
+        this.contract = contractFactory.defaultUserContractBuilder(dldWallet, senderUserAddressType).build();
     }
 
 }

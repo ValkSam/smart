@@ -14,18 +14,23 @@ import java.util.concurrent.CompletableFuture;
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class SomeOperation extends ContractOwnerOperation {
 
-    private static final String FUNC_NAME = "Some";
+    private static final ContractActionType ACTION_TYPE = null;
 
     public SomeOperation(String userName,
                          BigInteger amount,
                          String documentUid,
                          String data) {
-        super(FUNC_NAME, userName, amount, documentUid, data);
+        super(ACTION_TYPE, userName, amount, documentUid, data);
     }
 
     @Override
     public CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException {
         return CompletableFuture.supplyAsync(TransactionReceipt::new);
+    }
+
+    @Override
+    public void callOnSuccess(TransactionReceipt receipt) {
+
     }
 
 }

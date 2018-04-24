@@ -19,6 +19,7 @@ import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactor
 import web3j.example.web3jdemo.contract.operation.ContractOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.service.CasinoService;
 import web3j.example.web3jdemo.service.DldWalletService;
 
 import java.io.IOException;
@@ -40,13 +41,19 @@ public class Web3jdemoApplication implements CommandLineRunner {
     private final ContractOperationFactory contractOperationFactory;
     private final DefaultContractFactory defaultContractFactory;
     private final DldWalletService dldWalletService;
+    private final CasinoService casinoService;
 
     @Autowired
-    public Web3jdemoApplication(Web3jHelper web3jHelper, ContractOperationFactory contractOperationFactory, DefaultContractFactory defaultContractFactory, DldWalletService dldWalletService) {
+    public Web3jdemoApplication(Web3jHelper web3jHelper,
+                                ContractOperationFactory contractOperationFactory,
+                                DefaultContractFactory defaultContractFactory,
+                                DldWalletService dldWalletService,
+                                CasinoService casinoService) {
         this.web3jHelper = web3jHelper;
         this.contractOperationFactory = contractOperationFactory;
         this.defaultContractFactory = defaultContractFactory;
         this.dldWalletService = dldWalletService;
+        this.casinoService = casinoService;
     }
 
     public static void main(String[] args) {
@@ -67,9 +74,10 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
 //        listenToEvent(contract, BigInteger.valueOf(41500));
 
-//        registerUserOne();
+        registerCasinoOne();
+        registerUserOne();
 
-        Consumer<DldContract.TransactionEventResponse> onExecute = (event) -> {
+        Consumer<DldContract.TransferEventResponse> onExecute = (event) -> {
             System.out.println("@@@@@@");
             System.out.println(ConvertHelper.TransactionEventResponseToString(event));
             System.out.println("@@@@@@");
@@ -85,7 +93,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
             System.out.println(" >>>>>>>>> I have not been able to execute !" + Thread.currentThread().getName() + " due to: " + exception.getMessage());
         };
 
-        ContractOperation enrollRequestOperation1 = contractOperationFactory.enrollRequestOperation(
+    /*    ContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(11L),
                 "doc_7" + '\u241F' + "5",
@@ -99,7 +107,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         delay(100);
 
-        CompletableFuture<TransactionReceipt> receipt2 = contractOperationFactory.enrollRequestOperation(
+        CompletableFuture<TransactionReceipt> receipt2 = contractOperationFactory.registerEnrollRequestDocument(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(12L),
                 "doc_8" + '\u241F' + "5",
@@ -108,26 +116,31 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 onReject,
                 onError)
                 .execute();
-//        receipt2.get();
+//        receipt2.get();*/
 
         System.out.println("*************************************");
 
-        delay(5000);
-        if (1 == 1) return;
+//        delay(5000);
+//        if (1 == 1) return;
 
         CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.enrollOperation(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(11L),
                 "doc_7" + '\u241F' + "5",
-                "{\"invoiceResponseId\":1000}")
+                "{\"invoiceResponseId\":1000}",
+                null,
+                onReject,
+                onError)
                 .execute();
-        System.out.println(receipt3.get());
+//        receipt3.get();
 
         CompletableFuture<TransactionReceipt> receipt4 = contractOperationFactory.enrollOperation(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(12L),
                 "doc_8" + '\u241F' + "5",
-                "{\"invoiceResponseId\":1001}")
+                "{\"invoiceResponseId\":1001}",null,
+                onReject,
+                onError)
                 .execute();
         receipt4.get();
 
@@ -147,7 +160,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
     }
 
     private void listenToEvent(DldContract contract, BigInteger blockNumber) {
-        contract.transactionEventObservable(
+        contract.transferEventObservable(
                 DefaultBlockParameter.valueOf(blockNumber),
                 DefaultBlockParameter.valueOf(DefaultBlockParameterName.LATEST.name()))
                 .subscribe(event -> {
@@ -157,10 +170,18 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 });
     }
 
+    private void registerCasinoOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
+        ContractOperation enrollRequestOperation0 = contractOperationFactory.registerCasinoOperation(
+                casinoService.getCasinoOne(),
+                "{\"casinoId\":20}");
+
+        CompletableFuture<TransactionReceipt> receipt0 = enrollRequestOperation0.execute();
+        System.out.println(receipt0.get());
+    }
+
     private void registerUserOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
         ContractOperation enrollRequestOperation0 = contractOperationFactory.registerUserOperation(
                 dldWalletService.getWalletOne(),
-                "2000",
                 "{\"userId\":2000}");
 
         CompletableFuture<TransactionReceipt> receipt0 = enrollRequestOperation0.execute();
