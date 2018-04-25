@@ -1,7 +1,7 @@
 pragma solidity ^0.4.21;
 
 contract utilAware {
-
+    
     function stringToBytes32(string self) public pure returns (bytes32 result) {
         if (bytes(self).length == 0) {
             return "";
@@ -11,11 +11,11 @@ contract utilAware {
             result := mload(add(self, 32))
         }
     }
-
+    
 }
 
 contract root {
-
+    
     address private rooter;
 
     function root() public{
@@ -30,13 +30,13 @@ contract root {
         require (msg.sender == rooter);
         _;
     }
-
+    
 }
 
 contract eventAware {
-
+    
     enum TransactionType {
-        REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, BUY, SELL, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST
+        REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, WITHDRAW, BUY, SELL, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST, WITHDRAW_REQUEST
     }
 
 }
@@ -69,6 +69,20 @@ contract eventTransferAware is eventAware {
     event Transfer(
         TransactionType txType,
         address user,
+        address senderActive,
+        address receiverIndex,
+        address receiverActive,
+        uint amount,
+        string details
+        );
+
+}
+
+contract eventExchangeAware is eventAware {
+
+    event Exchange(
+        TransactionType txType,
+        address user,
         address sender,
         address receiver,
         uint amount,
@@ -81,6 +95,15 @@ contract eventTransferAware is eventAware {
 contract eventMintAware is eventAware {
 
     event Mint(
+        TransactionType txType,
+        address user,
+        address mintedAddress,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+    event Burn(
         TransactionType txType,
         address user,
         address mintedAddress,
@@ -176,7 +199,12 @@ contract user is root, utilAware, eventRegisterAware {
     }
 
     modifier onlyByUserOrRooter(address indexAddress) {
-        require (msg.sender == indexAddress || msg.sender == getRooter());
+        if (msg.sender == indexAddress) {
+            require(users[indexAddress].balance.active.addr != address(0x0));
+            require (users[indexAddress].isActive);
+        } else if (msg.sender != getRooter()) {
+            revert();
+        }
         _;
     }
 
@@ -302,6 +330,24 @@ contract document is user, eventRegisterDocumentAware {
             details);
     }
 
+    function registerWithdrawRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUserFromActive(indexAddress)
+        onlyDocumented(documentUID)
+        onlyUniqueDocument(indexAddress, documentUID)
+    {
+        require(amount > 0);
+
+        users[indexAddress].docLog[keccak256(documentUID)] = DocLog(block.number, amount);
+        users[indexAddress].docLogIndex.push(stringToBytes32(documentUID));
+
+        emit RegisterDocument(
+            TransactionType.WITHDRAW_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
     modifier onlyDocumented(string documentUID) {
         require(bytes(documentUID).length != 0);
         require(bytes(documentUID).length <= 32);
@@ -310,7 +356,7 @@ contract document is user, eventRegisterDocumentAware {
 }
 
 
-contract DLT_5 is root, user, document, casino, eventTransferAware, eventMintAware {
+contract DLT_5 is root, user, document, casino, eventTransferAware, eventExchangeAware, eventMintAware {
 
     function DLT_5() public {
 
@@ -336,6 +382,47 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventMintAwa
             details);
     }
 
+    function withdraw(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUserFromPassive(indexAddress)
+        onlyExistedDocument(indexAddress, documentUID, amount)
+    {
+        require(amount > 0);
+        users[indexAddress].balance.passive.amount >= amount;
+
+        removeFromDocLog(indexAddress, documentUID);
+
+        users[indexAddress].balance.passive.amount -= amount;
+
+        emit Burn(
+            TransactionType.WITHDRAW,
+            indexAddress,
+            users[indexAddress].balance.passive.addr,
+            amount,
+            documentUID,
+            details);
+    }
+    
+    
+    function transferCoin(address indexAddress, address receiverIndexAddress, uint amount, string details) public
+        onlyByUserFromActive(indexAddress)
+        onlyExistedUser(receiverIndexAddress)
+    {
+        require(amount > 0);
+        require(users[indexAddress].balance.active.amount >= amount);
+
+        users[indexAddress].balance.active.amount -= amount;
+        users[receiverIndexAddress].balance.active.amount += amount;
+
+        emit Transfer(
+            TransactionType.TRANSFER,
+            indexAddress,
+            users[indexAddress].balance.active.addr,
+            receiverIndexAddress,
+            users[receiverIndexAddress].balance.active.addr,
+            amount,
+            details);
+    }
+
     function depositCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
         onlyByUserFromActive(indexAddress)
         onlyExistedCasino(casinoAddress)
@@ -346,7 +433,7 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventMintAwa
         casinos[casinoAddress].amount += amount;
         users[indexAddress].balance.active.amount -= amount;
 
-        emit Transfer(
+        emit Exchange(
             TransactionType.BUY,
             indexAddress,
             users[indexAddress].balance.active.addr,
@@ -355,7 +442,7 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventMintAwa
             documentUID,
             details);
     }
-
+    
     function withdrawCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
         onlyByUserFromActive(indexAddress)
         onlyExistedCasino(casinoAddress)
@@ -366,7 +453,7 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventMintAwa
         casinos[casinoAddress].amount -= amount;
         users[indexAddress].balance.active.amount += amount;
 
-        emit Transfer(
+        emit Exchange(
             TransactionType.SELL,
             indexAddress,
             casinoAddress,
