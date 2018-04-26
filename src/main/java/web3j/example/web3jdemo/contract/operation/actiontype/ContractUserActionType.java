@@ -23,4 +23,10 @@ public enum ContractUserActionType implements ContractActionType {
     ContractUserActionType(UserAddressType userAddressType) {
         this.userAddressType = userAddressType;
     }
+
+    @Override
+    public String getActionTypeName() {
+        return this.name();
+    }
+
 }

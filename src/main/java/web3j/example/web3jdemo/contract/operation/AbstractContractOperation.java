@@ -1,5 +1,6 @@
 package web3j.example.web3jdemo.contract.operation;
 
+import lombok.Getter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Async;
 import org.web3j.protocol.core.RemoteCall;
@@ -7,6 +8,9 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactory;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractActionType;
+import web3j.example.web3jdemo.contract.operation.exception.ContractExecutionInterruptedException;
+import web3j.example.web3jdemo.contract.operation.exception.ContractUnderpricedException;
+import web3j.example.web3jdemo.contract.operation.exception.ContractUnrecognizedException;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
 
 import java.io.IOException;
@@ -16,11 +20,22 @@ import java.util.function.Consumer;
 
 import static java.lang.Integer.decode;
 import static java.util.Objects.isNull;
+import static web3j.example.web3jdemo.contract.operation.AbstractContractOperation.KnownWeb3jException.UNDERPRICED;
 
 public abstract class AbstractContractOperation {
 
-    private static final Integer MAX_ATTEMPTS_COUNT = 10;
-    private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 1000;
+    @Getter
+    protected enum KnownWeb3jException {
+        UNDERPRICED("replacement transaction underpriced");
+        private final String exceptionPhrase;
+
+        KnownWeb3jException(String exceptionPhrase) {
+            this.exceptionPhrase = exceptionPhrase;
+        }
+    }
+
+    private static final Integer MAX_ATTEMPTS_COUNT = 30;
+    private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 500;
     protected final ContractActionType contractActionType;
     protected final String data;
     @Autowired
@@ -28,7 +43,6 @@ public abstract class AbstractContractOperation {
     protected int attemptCount = 1;
     protected DldContract contract;
 
-    private Exception lastException;
     private LocalDateTime startDate = LocalDateTime.now();
     private Consumer<TransactionReceipt> onReject;
     private Consumer<Exception> onError;
@@ -52,39 +66,41 @@ public abstract class AbstractContractOperation {
     public abstract CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException;
 
     protected final CompletableFuture<TransactionReceipt> execute(RemoteCall<TransactionReceipt> remoteCall) throws IOException, TransactionException {
-        if (attemptCount > MAX_ATTEMPTS_COUNT) {
-            if (!isNull(onError)) {
-                onError.accept(lastException);
-            }
-            throw new RuntimeException(lastException.getMessage());
-        }
-        TransactionReceipt receipt;
         try {
-            System.out.println(contractActionType + " >>>>>>>>>> start: " + Thread.currentThread().getName());
-            receipt = remoteCall.send();
-            System.out.println(contractActionType + " >>>>>>>>>> end: " + Thread.currentThread().getName());
-            if (decode(receipt.getStatus()) == 1) {
-                callOnSuccess(receipt);
-            }
-            if (decode(receipt.getStatus()) == 0 && !isNull(onReject)) {
-                onReject.accept(receipt);
-            }
-            return CompletableFuture.completedFuture(receipt);
-        } catch (Exception e) {
-            lastException = e;
-            if (!isNull(e.getMessage()) && e.getMessage().contains("replacement transaction underpriced")) {
-                System.out.println(contractActionType + " failed " + Thread.currentThread().getName());
-                try {
-                    Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
-                } catch (InterruptedException e1) {
-                    e1.printStackTrace();
+            TransactionReceipt receipt;
+            try {
+                System.out.println(contractActionType + " >>>>>>>>>> start: " + Thread.currentThread().getName());
+                receipt = remoteCall.send();
+                if (decode(receipt.getStatus()) == 1) {
+                    callOnSuccess(receipt);
                 }
-                attemptCount++;
-            } else {
-                attemptCount = MAX_ATTEMPTS_COUNT + 1;
+                if (decode(receipt.getStatus()) == 0 && !isNull(onReject)) {
+                    onReject.accept(receipt);
+                }
+                System.out.println(contractActionType + " >>>>>>>>>> end: " + Thread.currentThread().getName());
+                return CompletableFuture.completedFuture(receipt);
+            } catch (Exception e) {
+                if (!isNull(e.getMessage()) && e.getMessage().contains(UNDERPRICED.getExceptionPhrase())) {
+                    System.out.println(contractActionType + " failed " + Thread.currentThread().getName());
+                    try {
+                        Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
+                    } catch (InterruptedException e1) {
+                        throw new ContractExecutionInterruptedException(contractActionType, e1);
+                    }
+                    if (attemptCount == MAX_ATTEMPTS_COUNT) {
+                        throw new ContractUnderpricedException(contractActionType, e);
+                    }
+                    attemptCount++;
+                } else {
+                    throw new ContractUnrecognizedException(contractActionType, e);
+                }
+                return this.execute(remoteCall);
             }
-            return this.execute(remoteCall);
-
+        } catch (Exception e) {
+            if (!isNull(onError)) {
+                onError.accept(e);
+            }
+            throw e;
         }
     }
 
