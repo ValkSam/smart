@@ -41,7 +41,7 @@ public class CancelEnrollRequestOperation extends AbstractContractUserDocumentOp
 
     @Override
     public CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException {
-        return execute(contract.registerEnrollRequestDocument(
+        return execute(contract.cancelEnrollRequestDocument(
                 dldWallet.getAddressIndex(),
                 amount,
                 documentUID,

@@ -35,7 +35,7 @@ public abstract class AbstractContractOperation {
     }
 
     private static final Integer MAX_ATTEMPTS_COUNT = 30;
-    private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 500;
+    private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 1000;
     protected final ContractActionType contractActionType;
     protected final String data;
     @Autowired

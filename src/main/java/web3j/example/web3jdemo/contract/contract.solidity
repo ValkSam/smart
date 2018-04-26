@@ -165,7 +165,7 @@ contract user is root, utilAware, eventRegisterAware {
 
     function removeFromDocLog(address indexAddress, string documentUID) public {
         uint idx = getArrayItemIndex(users[indexAddress].docLogIndex, documentUID);
-        assert(idx == uint(-1));
+        assert(idx != uint(-1));
         delete(users[indexAddress].docLog[keccak256(documentUID)]);
         removeArrayItem(users[indexAddress].docLogIndex, idx);
     }
@@ -221,7 +221,7 @@ contract user is root, utilAware, eventRegisterAware {
     }
 
     modifier onlyExistedUser(address indexAddress) {
-        require(users[indexAddress].balance.active.addr != address(0x0));
+        require (users[indexAddress].balance.active.addr != address(0x0));
         require (users[indexAddress].isActive);
         _;
     }
@@ -316,7 +316,6 @@ contract document is user, eventRegisterDocumentAware {
 
     function cancelEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
         onlyByUserOrRooter(indexAddress)
-        onlyDocumented(documentUID)
         onlyExistedDocument(indexAddress, documentUID, amount)
     {
 

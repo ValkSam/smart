@@ -90,7 +90,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
         };
 
         Consumer<Exception> onError = (exception) -> {
-            System.out.println(" >>>>>>>>> I have not been able to execute !" + Thread.currentThread().getName() + " due to: " + exception.getMessage());
+            System.out.println(" >>>>>>>>> I have not been able to execute !" + " due to: " + exception.getMessage()+" "+exception.getCause().getMessage());
         };
 
         /*AbstractContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
@@ -120,7 +120,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.registerEnrollRequestDocument(
                 dldWalletService.getWalletOne(),
-                BigInteger.valueOf(12L),
+                BigInteger.valueOf(13L),
                 "doc_9" + '\u241F' + "5",
                 "{\"invoiceAmount\":130}",
                 onExecute,
@@ -157,7 +157,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         CompletableFuture<TransactionReceipt> receipt3_2 = contractOperationFactory.cancelEnrollRequestTransferOperation(
                 dldWalletService.getWalletOne(),
-                BigInteger.valueOf(12L),
+                BigInteger.valueOf(13L),
                 "doc_9" + '\u241F' + "5",
                 "{\"comment\":\"It's my decision\"}", null,
                 onReject,
