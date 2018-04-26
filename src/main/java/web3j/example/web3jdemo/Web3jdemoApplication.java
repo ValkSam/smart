@@ -16,7 +16,7 @@ import rx.functions.Action1;
 import web3j.example.web3jdemo.blockchain.utils.ConvertHelper;
 import web3j.example.web3jdemo.blockchain.utils.Web3jHelper;
 import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactory;
-import web3j.example.web3jdemo.contract.operation.ContractOperation;
+import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.service.CasinoService;
@@ -171,7 +171,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
     }
 
     private void registerCasinoOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
-        ContractOperation enrollRequestOperation0 = contractOperationFactory.registerCasinoOperation(
+        AbstractContractOperation enrollRequestOperation0 = contractOperationFactory.registerCasinoOperation(
                 casinoService.getCasinoOne(),
                 "{\"casinoId\":20}");
 
@@ -180,7 +180,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
     }
 
     private void registerUserOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
-        ContractOperation enrollRequestOperation0 = contractOperationFactory.registerUserOperation(
+        AbstractContractOperation enrollRequestOperation0 = contractOperationFactory.registerUserOperation(
                 dldWalletService.getWalletOne(),
                 "{\"userId\":2000}");
 

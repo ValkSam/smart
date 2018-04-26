@@ -36,7 +36,7 @@ contract root {
 contract eventAware {
     
     enum TransactionType {
-        REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, WITHDRAW, BUY, SELL, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST, WITHDRAW_REQUEST
+        REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, WITHDRAW, DEPOSIT, TAKE, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST, WITHDRAW_REQUEST
     }
 
 }
@@ -106,7 +106,7 @@ contract eventMintAware is eventAware {
     event Burn(
         TransactionType txType,
         address user,
-        address mintedAddress,
+        address burnedAddress,
         uint amount,
         string documentUID,
         string details
@@ -401,8 +401,8 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventExchang
             documentUID,
             details);
     }
-    
-    
+
+
     function transferCoin(address indexAddress, address receiverIndexAddress, uint amount, string details) public
         onlyByUserFromActive(indexAddress)
         onlyExistedUser(receiverIndexAddress)
@@ -434,7 +434,7 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventExchang
         users[indexAddress].balance.active.amount -= amount;
 
         emit Exchange(
-            TransactionType.BUY,
+            TransactionType.DEPOSIT,
             indexAddress,
             users[indexAddress].balance.active.addr,
             casinoAddress,
@@ -442,8 +442,8 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventExchang
             documentUID,
             details);
     }
-    
-    function withdrawCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
+
+    function takeCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
         onlyByUserFromActive(indexAddress)
         onlyExistedCasino(casinoAddress)
     {
@@ -454,7 +454,7 @@ contract DLT_5 is root, user, document, casino, eventTransferAware, eventExchang
         users[indexAddress].balance.active.amount += amount;
 
         emit Exchange(
-            TransactionType.SELL,
+            TransactionType.TAKE,
             indexAddress,
             casinoAddress,
             users[indexAddress].balance.active.addr,

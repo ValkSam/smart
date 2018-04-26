@@ -12,7 +12,7 @@ public class ConvertHelper {
     }
 
     public static String TransactionEventResponseToString(DldContract.TransferEventResponse response) {
-        return "TransactionEventResponse{" +
+        return "TransactionEventResponse{" /*+
                 "log=" + response.log +
                 ", txType=" + response.txType +
                 ", user='" + response.user + '\'' +
@@ -21,7 +21,7 @@ public class ConvertHelper {
                 ", amount=" + response.amount +
                 ", documentUID='" + response.documentUID + '\'' +
                 ", details='" + response.details + '\'' +
-                '}';
+                '}'*/;
     }
 
 }

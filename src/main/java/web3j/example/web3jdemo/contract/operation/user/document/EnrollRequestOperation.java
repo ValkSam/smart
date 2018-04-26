@@ -1,4 +1,4 @@
-package web3j.example.web3jdemo.contract.operation.user.mint;
+package web3j.example.web3jdemo.contract.operation.user.document;
 
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -14,34 +14,35 @@ import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType.ENROLL;
+import static web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType.ENROLL_REQUEST;
+import static web3j.example.web3jdemo.domain.UserAddressType.INDEX;
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class EnrollTransferOperation extends AbstractContractUserMintOperation {
+public class EnrollRequestOperation extends AbstractContractUserDocumentOperation {
 
-    private static final ContractUserActionType ACTION_TYPE = ENROLL;
+    private static final ContractUserActionType ACTION_TYPE = ENROLL_REQUEST;
 
-    public EnrollTransferOperation(DldWallet dldWallet,
-                                   BigInteger amount,
-                                   String documentUid,
-                                   String data) {
+    public EnrollRequestOperation(DldWallet dldWallet,
+                                  BigInteger amount,
+                                  String documentUid,
+                                  String data) {
         super(ACTION_TYPE, dldWallet, amount, documentUid, data);
     }
 
-    public EnrollTransferOperation(DldWallet dldWallet,
-                                   BigInteger amount,
-                                   String documentUid,
-                                   String data,
-                                   Consumer<DldContract.MintEventResponse> onSuccess,
-                                   Consumer<TransactionReceipt> onReject,
-                                   Consumer<Exception> onError) {
+    public EnrollRequestOperation(DldWallet dldWallet,
+                                  BigInteger amount,
+                                  String documentUid,
+                                  String data,
+                                  Consumer<DldContract.RegisterDocumentEventResponse> onSuccess,
+                                  Consumer<TransactionReceipt> onReject,
+                                  Consumer<Exception> onError) {
         super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
     }
 
     @Override
     public CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException {
-        return execute(contract.enroll(
+        return execute(contract.registerEnrollRequestDocument(
                 dldWallet.getAddressIndex(),
                 amount,
                 documentUID,

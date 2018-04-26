@@ -5,8 +5,8 @@ import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.casino.register.RegisterCasinoOperation;
 import web3j.example.web3jdemo.contract.operation.user.register.RegisterUserOperation;
-import web3j.example.web3jdemo.contract.operation.user.transfer.CancelEnrollRequestTransferOperation;
-import web3j.example.web3jdemo.contract.operation.user.transfer.EnrollRequestTransferOperation;
+import web3j.example.web3jdemo.contract.operation.user.document.CancelEnrollRequestOperation;
+import web3j.example.web3jdemo.contract.operation.user.document.EnrollRequestOperation;
 import web3j.example.web3jdemo.contract.operation.user.mint.EnrollTransferOperation;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.domain.entity.Casino;
@@ -19,14 +19,14 @@ import java.util.function.Consumer;
 public abstract class ContractOperationFactory {
 
     @Lookup
-    public abstract EnrollRequestTransferOperation registerEnrollRequestDocument(
+    public abstract EnrollRequestOperation registerEnrollRequestDocument(
             DldWallet dldWallet,
             BigInteger amount,
             String documentUid,
             String data);
 
     @Lookup
-    public abstract EnrollRequestTransferOperation registerEnrollRequestDocument(
+    public abstract EnrollRequestOperation registerEnrollRequestDocument(
             DldWallet dldWallet,
             BigInteger amount,
             String documentUid,
@@ -36,14 +36,14 @@ public abstract class ContractOperationFactory {
             Consumer<Exception> onError);
 
     @Lookup
-    public abstract CancelEnrollRequestTransferOperation cancelEnrollRequestTransferOperation(
+    public abstract CancelEnrollRequestOperation cancelEnrollRequestTransferOperation(
             DldWallet dldWallet,
             BigInteger amount,
             String documentUid,
             String data);
 
     @Lookup
-    public abstract CancelEnrollRequestTransferOperation cancelEnrollRequestTransferOperation(
+    public abstract CancelEnrollRequestOperation cancelEnrollRequestTransferOperation(
             DldWallet dldWallet,
             BigInteger amount,
             String documentUid,

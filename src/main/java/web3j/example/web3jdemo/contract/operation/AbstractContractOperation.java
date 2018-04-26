@@ -6,6 +6,7 @@ import org.web3j.protocol.core.RemoteCall;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactory;
+import web3j.example.web3jdemo.contract.operation.actiontype.ContractActionType;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
 
 import java.io.IOException;
@@ -16,7 +17,7 @@ import java.util.function.Consumer;
 import static java.lang.Integer.decode;
 import static java.util.Objects.isNull;
 
-public abstract class ContractOperation {
+public abstract class AbstractContractOperation {
 
     private static final Integer MAX_ATTEMPTS_COUNT = 10;
     private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 1000;
@@ -32,17 +33,17 @@ public abstract class ContractOperation {
     private Consumer<TransactionReceipt> onReject;
     private Consumer<Exception> onError;
 
-    public ContractOperation(ContractActionType contractActionType,
-                             String data,
-                             Consumer<TransactionReceipt> onReject,
-                             Consumer<Exception> onError) {
+    public AbstractContractOperation(ContractActionType contractActionType,
+                                     String data,
+                                     Consumer<TransactionReceipt> onReject,
+                                     Consumer<Exception> onError) {
         this(contractActionType, data);
         this.onReject = onReject;
         this.onError = onError;
     }
 
-    public ContractOperation(ContractActionType contractActionType,
-                             String data) {
+    public AbstractContractOperation(ContractActionType contractActionType,
+                                     String data) {
         this.contractActionType = contractActionType;
         this.data = data;
     }
@@ -88,9 +89,5 @@ public abstract class ContractOperation {
     }
 
     public abstract void callOnSuccess(TransactionReceipt receipt);
-
-    public static enum ContractActionType {
-        REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, BUY, SELL, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST;
-    }
 
 }

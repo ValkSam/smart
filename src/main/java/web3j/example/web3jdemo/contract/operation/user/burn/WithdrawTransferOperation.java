@@ -1,4 +1,4 @@
-package web3j.example.web3jdemo.contract.operation.user.mint;
+package web3j.example.web3jdemo.contract.operation.user.burn;
 
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -18,30 +18,30 @@ import static web3j.example.web3jdemo.contract.operation.actiontype.ContractUser
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class EnrollTransferOperation extends AbstractContractUserMintOperation {
+public class WithdrawTransferOperation extends AbstractContractUserBurnOperation {
 
     private static final ContractUserActionType ACTION_TYPE = ENROLL;
 
-    public EnrollTransferOperation(DldWallet dldWallet,
-                                   BigInteger amount,
-                                   String documentUid,
-                                   String data) {
+    public WithdrawTransferOperation(DldWallet dldWallet,
+                                     BigInteger amount,
+                                     String documentUid,
+                                     String data) {
         super(ACTION_TYPE, dldWallet, amount, documentUid, data);
     }
 
-    public EnrollTransferOperation(DldWallet dldWallet,
-                                   BigInteger amount,
-                                   String documentUid,
-                                   String data,
-                                   Consumer<DldContract.MintEventResponse> onSuccess,
-                                   Consumer<TransactionReceipt> onReject,
-                                   Consumer<Exception> onError) {
+    public WithdrawTransferOperation(DldWallet dldWallet,
+                                     BigInteger amount,
+                                     String documentUid,
+                                     String data,
+                                     Consumer<DldContract.BurnEventResponse> onSuccess,
+                                     Consumer<TransactionReceipt> onReject,
+                                     Consumer<Exception> onError) {
         super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
     }
 
     @Override
     public CompletableFuture<TransactionReceipt> execute() throws IOException, TransactionException {
-        return execute(contract.enroll(
+        return execute(contract.withdraw(
                 dldWallet.getAddressIndex(),
                 amount,
                 documentUID,

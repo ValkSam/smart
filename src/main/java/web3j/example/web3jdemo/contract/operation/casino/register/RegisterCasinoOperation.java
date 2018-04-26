@@ -5,6 +5,7 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
+import web3j.example.web3jdemo.contract.operation.actiontype.ContractCasinoActionType;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.domain.entity.Casino;
 
@@ -12,13 +13,14 @@ import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static web3j.example.web3jdemo.contract.operation.ContractOperation.ContractActionType.REGISTER_CASINO;
+import static web3j.example.web3jdemo.contract.operation.actiontype.ContractCasinoActionType.REGISTER_CASINO;
+
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class RegisterCasinoOperation extends ContractCasinoRegisterOperation {
+public class RegisterCasinoOperation extends AbstractContractCasinoRegisterOperation {
 
-    private static final ContractActionType ACTION_TYPE = REGISTER_CASINO;
+    private static final ContractCasinoActionType ACTION_TYPE = REGISTER_CASINO;
 
     public RegisterCasinoOperation(Casino casino,
                                    String data) {
