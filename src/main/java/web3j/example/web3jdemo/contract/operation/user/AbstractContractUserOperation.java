@@ -9,22 +9,12 @@ import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.util.function.Consumer;
 
 @Getter
 public abstract class AbstractContractUserOperation extends AbstractContractOperation {
 
     protected final DldWallet dldWallet;
     protected final UserAddressType senderUserAddressType;
-
-    public AbstractContractUserOperation(ContractUserActionType contractUserActionType,
-                                         DldWallet dldWallet,
-                                         String data,
-                                         Consumer<Exception> onError) {
-        super(contractUserActionType, data, onError);
-        this.dldWallet = dldWallet;
-        this.senderUserAddressType = contractUserActionType.getUserAddressType();
-    }
 
     public AbstractContractUserOperation(ContractUserActionType contractUserActionType,
                                          DldWallet dldWallet,

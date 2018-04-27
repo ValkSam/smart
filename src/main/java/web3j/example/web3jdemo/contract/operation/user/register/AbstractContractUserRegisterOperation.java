@@ -2,6 +2,7 @@ package web3j.example.web3jdemo.contract.operation.user.register;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.exception.ContractException;
 import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
@@ -20,9 +21,8 @@ public abstract class AbstractContractUserRegisterOperation extends AbstractCont
                                                  DldWallet dldWallet,
                                                  String data,
                                                  Consumer<RegisterEvent> onSuccess,
-                                                 Consumer<RegisterUserReceipt> onReject,
-                                                 Consumer<Exception> onError) {
-        super(contractUserActionType, dldWallet, data, onError);
+                                                 Consumer<RegisterUserReceipt> onReject) {
+        super(contractUserActionType, dldWallet, data);
         this.onSuccess = onSuccess;
         this.onReject = onReject;
     }
@@ -44,6 +44,13 @@ public abstract class AbstractContractUserRegisterOperation extends AbstractCont
     public void callOnReject(TransactionReceipt receipt) {
         if (!isNull(onReject)) {
             onReject.accept(new RegisterUserReceipt(receipt, this));
+        }
+    }
+
+    @Override
+    public void callOnReject(ContractException exception) {
+        if (!isNull(onReject)) {
+            onReject.accept(new RegisterUserReceipt(exception, this));
         }
     }
 

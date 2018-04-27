@@ -30,9 +30,8 @@ public class RegisterUserOperation extends AbstractContractUserRegisterOperation
     public RegisterUserOperation(DldWallet dldWallet,
                                  String data,
                                  Consumer<RegisterEvent> onSuccess,
-                                 Consumer<RegisterUserReceipt> onReject,
-                                 Consumer<Exception> onError) {
-        super(ACTION_TYPE, dldWallet, data, onSuccess, onReject, onError);
+                                 Consumer<RegisterUserReceipt> onReject) {
+        super(ACTION_TYPE, dldWallet, data, onSuccess, onReject);
     }
 
     @Override

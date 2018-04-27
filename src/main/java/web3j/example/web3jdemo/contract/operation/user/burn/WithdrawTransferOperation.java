@@ -35,9 +35,8 @@ public class WithdrawTransferOperation extends AbstractContractUserBurnOperation
                                      String documentUid,
                                      String data,
                                      Consumer<BurnEvent> onSuccess,
-                                     Consumer<BurnReceipt> onReject,
-                                     Consumer<Exception> onError) {
-        super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
+                                     Consumer<BurnReceipt> onReject) {
+        super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject);
     }
 
     @Override

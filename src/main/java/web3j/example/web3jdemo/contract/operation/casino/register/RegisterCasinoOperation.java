@@ -31,9 +31,8 @@ public class RegisterCasinoOperation extends AbstractContractCasinoRegisterOpera
     public RegisterCasinoOperation(Casino casino,
                                    String data,
                                    Consumer<RegisterEvent> onSuccess,
-                                   Consumer<RegisterCasinoReceipt> onReject,
-                                   Consumer<Exception> onError) {
-        super(ACTION_TYPE, casino, data, onSuccess, onReject, onError);
+                                   Consumer<RegisterCasinoReceipt> onReject) {
+        super(ACTION_TYPE, casino, data, onSuccess, onReject);
     }
 
     @Override

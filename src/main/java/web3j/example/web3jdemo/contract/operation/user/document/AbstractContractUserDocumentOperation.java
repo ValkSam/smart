@@ -3,9 +3,10 @@ package web3j.example.web3jdemo.contract.operation.user.document;
 import lombok.Getter;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.exception.ContractException;
+import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
-import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.math.BigInteger;
@@ -28,9 +29,8 @@ public abstract class AbstractContractUserDocumentOperation extends AbstractCont
                                                  String documentUid,
                                                  String data,
                                                  Consumer<RegisterDocumentEvent> onSuccess,
-                                                 Consumer<RegisterDocumentReceipt> onReject,
-                                                 Consumer<Exception> onError) {
-        super(contractUserActionType, dldWallet, data, onError);
+                                                 Consumer<RegisterDocumentReceipt> onReject) {
+        super(contractUserActionType, dldWallet, data);
         this.amount = amount;
         this.documentUID = documentUid;
         this.onSuccess = onSuccess;
@@ -58,6 +58,13 @@ public abstract class AbstractContractUserDocumentOperation extends AbstractCont
     public void callOnReject(TransactionReceipt receipt) {
         if (!isNull(onReject)) {
             onReject.accept(new RegisterDocumentReceipt(receipt, this));
+        }
+    }
+
+    @Override
+    public void callOnReject(ContractException exception) {
+        if (!isNull(onReject)) {
+            onReject.accept(new RegisterDocumentReceipt(exception, this));
         }
     }
 

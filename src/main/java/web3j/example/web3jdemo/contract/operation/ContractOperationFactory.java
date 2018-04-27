@@ -35,8 +35,7 @@ public abstract class ContractOperationFactory {
             String documentUid,
             String data,
             Consumer<RegisterDocumentEvent> onExecute,
-            Consumer<RegisterDocumentReceipt> onReject,
-            Consumer<Exception> onError);
+            Consumer<RegisterDocumentReceipt> onReject);
 
     @Lookup
     public abstract CancelEnrollRequestOperation cancelEnrollRequestTransferOperation(
@@ -52,8 +51,7 @@ public abstract class ContractOperationFactory {
             String documentUid,
             String data,
             Consumer<RegisterDocumentEvent> onExecute,
-            Consumer<RegisterDocumentReceipt> onReject,
-            Consumer<Exception> onError);
+            Consumer<RegisterDocumentReceipt> onReject);
 
     @Lookup
     public abstract EnrollTransferOperation enrollOperation(
@@ -69,8 +67,7 @@ public abstract class ContractOperationFactory {
             String documentUid,
             String data,
             Consumer<RegisterDocumentEvent> onExecute,
-            Consumer<RegisterDocumentReceipt> onReject,
-            Consumer<Exception> onError);
+            Consumer<RegisterDocumentReceipt> onReject);
 
     @Lookup
     public abstract RegisterCasinoOperation registerCasinoOperation(
@@ -82,8 +79,7 @@ public abstract class ContractOperationFactory {
             Casino casino,
             String data,
             Consumer<RegisterEvent> onExecute,
-            Consumer<RegisterCasinoReceipt> onReject,
-            Consumer<Exception> onError);
+            Consumer<RegisterCasinoReceipt> onReject);
 
     @Lookup
     public abstract RegisterUserOperation registerUserOperation(
@@ -95,7 +91,6 @@ public abstract class ContractOperationFactory {
             DldWallet dldWallet,
             String data,
             Consumer<RegisterEvent> onExecute,
-            Consumer<RegisterUserReceipt> onReject,
-            Consumer<Exception> onError);
+            Consumer<RegisterUserReceipt> onReject);
 
 }

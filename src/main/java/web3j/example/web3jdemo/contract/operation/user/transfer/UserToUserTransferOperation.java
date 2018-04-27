@@ -35,9 +35,8 @@ public class UserToUserTransferOperation extends AbstractContractUserTransferOpe
                                        BigInteger amount,
                                        String data,
                                        Consumer<TransferEvent> onSuccess,
-                                       Consumer<TransferReceipt> onReject,
-                                       Consumer<Exception> onError) {
-        super(ACTION_TYPE, dldWallet, receiverIndexAddress, amount, data, onSuccess, onReject, onError);
+                                       Consumer<TransferReceipt> onReject) {
+        super(ACTION_TYPE, dldWallet, receiverIndexAddress, amount, data, onSuccess, onReject);
     }
 
     @Override

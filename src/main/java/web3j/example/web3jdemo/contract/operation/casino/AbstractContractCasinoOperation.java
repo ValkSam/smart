@@ -8,20 +8,11 @@ import web3j.example.web3jdemo.domain.entity.Casino;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
-import java.util.function.Consumer;
 
 @Getter
 public abstract class AbstractContractCasinoOperation extends AbstractContractOperation {
 
     protected final Casino casino;
-
-    public AbstractContractCasinoOperation(ContractCasinoActionType contractCasinoActionType,
-                                           Casino casino,
-                                           String data,
-                                           Consumer<Exception> onError) {
-        super(contractCasinoActionType, data, onError);
-        this.casino = casino;
-    }
 
     public AbstractContractCasinoOperation(ContractCasinoActionType contractActionType,
                                            Casino casino,

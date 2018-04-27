@@ -35,9 +35,8 @@ public class EnrollTransferOperation extends AbstractContractUserMintOperation {
                                    String documentUid,
                                    String data,
                                    Consumer<MintEvent> onSuccess,
-                                   Consumer<MintReceipt> onReject,
-                                   Consumer<Exception> onError) {
-        super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
+                                   Consumer<MintReceipt> onReject) {
+        super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject);
     }
 
     @Override

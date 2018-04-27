@@ -3,9 +3,9 @@ package web3j.example.web3jdemo.contract.operation.casino.register;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractCasinoActionType;
 import web3j.example.web3jdemo.contract.operation.casino.AbstractContractCasinoOperation;
+import web3j.example.web3jdemo.contract.operation.exception.ContractException;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterCasinoReceipt;
-import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
 import web3j.example.web3jdemo.domain.entity.Casino;
 
 import java.util.function.Consumer;
@@ -23,9 +23,8 @@ public abstract class AbstractContractCasinoRegisterOperation extends AbstractCo
                                                    Casino casino,
                                                    String data,
                                                    Consumer<RegisterEvent> onSuccess,
-                                                   Consumer<RegisterCasinoReceipt> onReject,
-                                                   Consumer<Exception> onError) {
-        super(contractCasinoActionType, casino, data, onError);
+                                                   Consumer<RegisterCasinoReceipt> onReject) {
+        super(contractCasinoActionType, casino, data);
         this.casino = casino;
         this.onSuccess = onSuccess;
         this.onReject = onReject;
@@ -49,6 +48,13 @@ public abstract class AbstractContractCasinoRegisterOperation extends AbstractCo
     public void callOnReject(TransactionReceipt receipt) {
         if (!isNull(onReject)) {
             onReject.accept(new RegisterCasinoReceipt(receipt, this));
+        }
+    }
+
+    @Override
+    public void callOnReject(ContractException exception) {
+        if (!isNull(onReject)) {
+            onReject.accept(new RegisterCasinoReceipt(exception, this));
         }
     }
 

@@ -2,6 +2,7 @@ package web3j.example.web3jdemo.contract.operation.user.transfer;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.exception.ContractException;
 import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.TransferEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.TransferReceipt;
@@ -26,9 +27,8 @@ public abstract class AbstractContractUserTransferOperation extends AbstractCont
                                                  BigInteger amount,
                                                  String data,
                                                  Consumer<TransferEvent> onSuccess,
-                                                 Consumer<TransferReceipt> onReject,
-                                                 Consumer<Exception> onError) {
-        super(contractUserActionType, dldWallet, data, onError);
+                                                 Consumer<TransferReceipt> onReject) {
+        super(contractUserActionType, dldWallet, data);
         this.amount = amount;
         this.receiverIndexAddress = receiverIndexAddress;
         this.onSuccess = onSuccess;
@@ -56,6 +56,13 @@ public abstract class AbstractContractUserTransferOperation extends AbstractCont
     public void callOnReject(TransactionReceipt receipt) {
         if (!isNull(onReject)) {
             onReject.accept(new TransferReceipt(receipt, this));
+        }
+    }
+
+    @Override
+    public void callOnReject(ContractException exception) {
+        if (!isNull(onReject)) {
+            onReject.accept(new TransferReceipt(exception, this));
         }
     }
 

@@ -75,19 +75,18 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
 //        listenToEvent(contract, BigInteger.valueOf(41500));
 
-        registerCasinoOne();
-        registerUserOne();
+//        registerCasinoOne();
+//        registerUserOne();
 
         Consumer<RegisterDocumentEvent> onRegisterDocumentSuccess = (event) -> {
-            System.out.println(">> OK ! " + event.getEventResponse().documentUID);
+            System.out.println(">> OK ! txType: " + event.getEventResponse().txType + " : " + event.getEventResponse().documentUID);
         };
 
         Consumer<RegisterDocumentReceipt> onRegisterDocumentReject = (receipt) -> {
-            System.out.println(">> REJECTED ! " + receipt.getContractOperation().getDocumentUID());
-        };
-
-        Consumer<Exception> onError = (exception) -> {
-            System.out.println(" >>>>>>>>> I have not been able to execute !" + " due to: " + exception.getMessage() + " === " + exception.getCause().getMessage());
+            if (receipt.getException().isPresent()) {
+                System.out.println(">> ERROR ! txType: " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getDocumentUID() + " : " + receipt.getException().get() + " : " + Thread.currentThread());
+            } else
+                System.out.println(">> REJECTED txType: ! " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getDocumentUID() + " : " + Thread.currentThread());
         };
 
         AbstractContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
@@ -96,8 +95,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_7" + '\u241F' + "5",
                 "{\"invoiceAmount\":110}",
                 onRegisterDocumentSuccess,
-                onRegisterDocumentReject,
-                onError);
+                onRegisterDocumentReject);
 
         CompletableFuture<TransactionReceipt> receipt1 = enrollRequestOperation1.execute();
 //        receipt1.get();
@@ -110,8 +108,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_8" + '\u241F' + "5",
                 "{\"invoiceAmount\":120}",
                 onRegisterDocumentSuccess,
-                onRegisterDocumentReject,
-                onError)
+                onRegisterDocumentReject)
                 .execute();
 //        receipt2.get();
 
@@ -121,8 +118,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_9" + '\u241F' + "5",
                 "{\"invoiceAmount\":130}",
                 onRegisterDocumentSuccess,
-                onRegisterDocumentReject,
-                onError)
+                onRegisterDocumentReject)
                 .execute();
 //        receipt3.get();
 
@@ -137,8 +133,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_7" + '\u241F' + "5",
                 "{\"invoiceResponseId\":1000}",
                 null,
-                onRegisterDocumentReject,
-                onError)
+                onRegisterDocumentReject)
                 .execute();
 //        receipt1_2.get();
 
@@ -148,8 +143,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_8" + '\u241F' + "5",
                 "{\"invoiceResponseId\":1001}",
                 null,
-                onRegisterDocumentReject,
-                onError)
+                onRegisterDocumentReject)
                 .execute();
 //        receipt2_2.get();
 
@@ -159,8 +153,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_9" + '\u241F' + "5",
                 "{\"comment\":\"It's my decision\"}",
                 null,
-                onRegisterDocumentReject,
-                onError)
+                onRegisterDocumentReject)
                 .execute();
         receipt3_2.get();
 

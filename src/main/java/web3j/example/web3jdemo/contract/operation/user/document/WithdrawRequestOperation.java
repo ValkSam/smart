@@ -36,9 +36,8 @@ public class WithdrawRequestOperation extends AbstractContractUserDocumentOperat
                                     String documentUid,
                                     String data,
                                     Consumer<RegisterDocumentEvent> onSuccess,
-                                    Consumer<RegisterDocumentReceipt> onReject,
-                                    Consumer<Exception> onError) {
-        super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
+                                    Consumer<RegisterDocumentReceipt> onReject) {
+        super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject);
     }
 
     @Override

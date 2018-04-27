@@ -2,9 +2,10 @@ package web3j.example.web3jdemo.contract.operation.user.burn;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.exception.ContractException;
+import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.BurnEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.BurnReceipt;
-import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.math.BigInteger;
@@ -26,9 +27,8 @@ public abstract class AbstractContractUserBurnOperation extends AbstractContract
                                              String documentUid,
                                              String data,
                                              Consumer<BurnEvent> onSuccess,
-                                             Consumer<BurnReceipt> onReject,
-                                             Consumer<Exception> onError) {
-        super(contractUserActionType, dldWallet, data, onError);
+                                             Consumer<BurnReceipt> onReject) {
+        super(contractUserActionType, dldWallet, data);
         this.amount = amount;
         this.documentUID = documentUid;
         this.onSuccess = onSuccess;
@@ -56,6 +56,13 @@ public abstract class AbstractContractUserBurnOperation extends AbstractContract
     public void callOnReject(TransactionReceipt receipt) {
         if (!isNull(onReject)) {
             onReject.accept(new BurnReceipt(receipt, this));
+        }
+    }
+
+    @Override
+    public void callOnReject(ContractException exception) {
+        if (!isNull(onReject)) {
+            onReject.accept(new BurnReceipt(exception, this));
         }
     }
 

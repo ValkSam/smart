@@ -10,6 +10,7 @@ import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactor
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractActionType;
 import web3j.example.web3jdemo.contract.operation.exception.ContractException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractExecutionInterruptedException;
+import web3j.example.web3jdemo.contract.operation.exception.ContractOperationGeneralException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractUnderpricedException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractUnrecognizedException;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
@@ -17,23 +18,12 @@ import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Consumer;
 
 import static java.lang.Integer.decode;
 import static java.util.Objects.isNull;
 import static web3j.example.web3jdemo.contract.operation.AbstractContractOperation.KnownWeb3jException.UNDERPRICED;
 
 public abstract class AbstractContractOperation {
-
-    @Getter
-    protected enum KnownWeb3jException {
-        UNDERPRICED("replacement transaction underpriced");
-        private final String exceptionPhrase;
-
-        KnownWeb3jException(String exceptionPhrase) {
-            this.exceptionPhrase = exceptionPhrase;
-        }
-    }
 
     private static final Integer MAX_ATTEMPTS_COUNT = 60;
     private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 1000;
@@ -43,16 +33,7 @@ public abstract class AbstractContractOperation {
     protected DefaultContractFactory contractFactory;
     protected int attemptCount = 1;
     protected DldContract contract;
-
     private LocalDateTime startDate = LocalDateTime.now();
-    private Consumer<Exception> onError;
-
-    public AbstractContractOperation(ContractActionType contractActionType,
-                                     String data,
-                                     Consumer<Exception> onError) {
-        this(contractActionType, data);
-        this.onError = onError;
-    }
 
     public AbstractContractOperation(ContractActionType contractActionType,
                                      String data) {
@@ -83,32 +64,36 @@ public abstract class AbstractContractOperation {
                     try {
                         Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
                     } catch (InterruptedException e1) {
-                        throw new ContractExecutionInterruptedException(contractActionType, e1);
+                        throw new ContractExecutionInterruptedException(e1);
                     }
                     if (attemptCount == MAX_ATTEMPTS_COUNT) {
-                        throw new ContractUnderpricedException(contractActionType, e);
+                        throw new ContractUnderpricedException(e);
                     }
                     attemptCount++;
+                    System.out.println(1 / 0);
                 } else {
-                    throw new ContractUnrecognizedException(contractActionType, e);
+                    throw new ContractUnrecognizedException(e);
                 }
                 return this.execute(remoteCall);
             }
         } catch (Exception e) {
-            if ((!(e.getCause() instanceof ContractException))
-                    && (!(e.getCause() instanceof ContractException))) {
-                e.printStackTrace();
+            ContractException exception;
+            if (e instanceof ContractException) {
+                exception = (ContractException) e;
+            } else {
+                exception = new ContractOperationGeneralException(e);
+//                e.printStackTrace();
             }
-            if (!isNull(onError)) {
-                onError.accept(e);
-            }
-            throw e;
+            callOnReject(exception);
+            throw exception;
         }
     }
 
     public abstract void callOnSuccess(TransactionReceipt receipt);
 
     public abstract void callOnReject(TransactionReceipt receipt);
+
+    public abstract void callOnReject(ContractException exception);
 
     public ContractActionType getContractActionType() {
         return contractActionType;
@@ -120,5 +105,15 @@ public abstract class AbstractContractOperation {
 
     public LocalDateTime getStartDate() {
         return startDate;
+    }
+
+    @Getter
+    protected enum KnownWeb3jException {
+        UNDERPRICED("replacement transaction underpriced");
+        private final String exceptionPhrase;
+
+        KnownWeb3jException(String exceptionPhrase) {
+            this.exceptionPhrase = exceptionPhrase;
+        }
     }
 }
