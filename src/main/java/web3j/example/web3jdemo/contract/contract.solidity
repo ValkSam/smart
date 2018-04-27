@@ -164,6 +164,7 @@ contract user is root, utilAware, eventRegisterAware {
     }
 
     function removeFromDocLog(address indexAddress, string documentUID) public {
+        //TODO remember about public
         uint idx = getArrayItemIndex(users[indexAddress].docLogIndex, documentUID);
         assert(idx != uint(-1));
         delete(users[indexAddress].docLog[keccak256(documentUID)]);

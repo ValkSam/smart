@@ -3,26 +3,28 @@ package web3j.example.web3jdemo.contract.operation.user.register;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
 import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.util.function.Consumer;
 
 import static java.util.Objects.isNull;
-import static web3j.example.web3jdemo.domain.UserAddressType.INDEX;
 
 public abstract class AbstractContractUserRegisterOperation extends AbstractContractUserOperation {
 
-    private Consumer<DldContract.RegisterEventResponse> onSuccess;
+    private Consumer<RegisterEvent> onSuccess;
+    private Consumer<RegisterUserReceipt> onReject;
 
     public AbstractContractUserRegisterOperation(ContractUserActionType contractUserActionType,
                                                  DldWallet dldWallet,
                                                  String data,
-                                                 Consumer<DldContract.RegisterEventResponse> onSuccess,
-                                                 Consumer<TransactionReceipt> onReject,
+                                                 Consumer<RegisterEvent> onSuccess,
+                                                 Consumer<RegisterUserReceipt> onReject,
                                                  Consumer<Exception> onError) {
-        super(contractUserActionType, dldWallet, data, onReject, onError);
+        super(contractUserActionType, dldWallet, data, onError);
         this.onSuccess = onSuccess;
+        this.onReject = onReject;
     }
 
     public AbstractContractUserRegisterOperation(ContractUserActionType contractUserActionType,
@@ -34,7 +36,14 @@ public abstract class AbstractContractUserRegisterOperation extends AbstractCont
     @Override
     public void callOnSuccess(TransactionReceipt receipt) {
         if (!isNull(onSuccess)) {
-            onSuccess.accept(contract.getRegisterEvents(receipt).get(0));
+            onSuccess.accept(new RegisterEvent(contract, receipt));
+        }
+    }
+
+    @Override
+    public void callOnReject(TransactionReceipt receipt) {
+        if (!isNull(onReject)) {
+            onReject.accept(new RegisterUserReceipt(receipt, this));
         }
     }
 

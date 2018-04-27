@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.io.IOException;
@@ -15,7 +16,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType.ENROLL_REQUEST;
-import static web3j.example.web3jdemo.domain.UserAddressType.INDEX;
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
@@ -34,8 +34,8 @@ public class EnrollRequestOperation extends AbstractContractUserDocumentOperatio
                                   BigInteger amount,
                                   String documentUid,
                                   String data,
-                                  Consumer<DldContract.RegisterDocumentEventResponse> onSuccess,
-                                  Consumer<TransactionReceipt> onReject,
+                                  Consumer<RegisterDocumentEvent> onSuccess,
+                                  Consumer<RegisterDocumentReceipt> onReject,
                                   Consumer<Exception> onError) {
         super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
     }

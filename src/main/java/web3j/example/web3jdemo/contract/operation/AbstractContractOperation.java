@@ -45,15 +45,12 @@ public abstract class AbstractContractOperation {
     protected DldContract contract;
 
     private LocalDateTime startDate = LocalDateTime.now();
-    private Consumer<TransactionReceipt> onReject;
     private Consumer<Exception> onError;
 
     public AbstractContractOperation(ContractActionType contractActionType,
                                      String data,
-                                     Consumer<TransactionReceipt> onReject,
                                      Consumer<Exception> onError) {
         this(contractActionType, data);
-        this.onReject = onReject;
         this.onError = onError;
     }
 
@@ -75,8 +72,8 @@ public abstract class AbstractContractOperation {
                 if (decode(receipt.getStatus()) == 1) {
                     callOnSuccess(receipt);
                 }
-                if (decode(receipt.getStatus()) == 0 && !isNull(onReject)) {
-                    onReject.accept(receipt);
+                if (decode(receipt.getStatus()) == 0) {
+                    callOnReject(receipt);
                 }
                 System.out.println(contractActionType + " >>>>>>>>>> end: " + Thread.currentThread().getName());
                 return CompletableFuture.completedFuture(receipt);
@@ -111,4 +108,17 @@ public abstract class AbstractContractOperation {
 
     public abstract void callOnSuccess(TransactionReceipt receipt);
 
+    public abstract void callOnReject(TransactionReceipt receipt);
+
+    public ContractActionType getContractActionType() {
+        return contractActionType;
+    }
+
+    public String getData() {
+        return data;
+    }
+
+    public LocalDateTime getStartDate() {
+        return startDate;
+    }
 }

@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.io.IOException;
@@ -34,8 +35,8 @@ public class WithdrawRequestOperation extends AbstractContractUserDocumentOperat
                                     BigInteger amount,
                                     String documentUid,
                                     String data,
-                                    Consumer<DldContract.RegisterDocumentEventResponse> onSuccess,
-                                    Consumer<TransactionReceipt> onReject,
+                                    Consumer<RegisterDocumentEvent> onSuccess,
+                                    Consumer<RegisterDocumentReceipt> onReject,
                                     Consumer<Exception> onError) {
         super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
     }

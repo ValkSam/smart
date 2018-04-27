@@ -2,8 +2,9 @@ package web3j.example.web3jdemo.contract.operation.user.burn;
 
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.BurnEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.BurnReceipt;
 import web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.math.BigInteger;
@@ -16,20 +17,22 @@ public abstract class AbstractContractUserBurnOperation extends AbstractContract
     protected final BigInteger amount;
     protected final String documentUID;
 
-    private Consumer<DldContract.BurnEventResponse> onSuccess;
+    private Consumer<BurnEvent> onSuccess;
+    private Consumer<BurnReceipt> onReject;
 
     public AbstractContractUserBurnOperation(ContractUserActionType contractUserActionType,
                                              DldWallet dldWallet,
                                              BigInteger amount,
                                              String documentUid,
                                              String data,
-                                             Consumer<DldContract.BurnEventResponse> onSuccess,
-                                             Consumer<TransactionReceipt> onReject,
+                                             Consumer<BurnEvent> onSuccess,
+                                             Consumer<BurnReceipt> onReject,
                                              Consumer<Exception> onError) {
-        super(contractUserActionType, dldWallet, data, onReject, onError);
+        super(contractUserActionType, dldWallet, data, onError);
         this.amount = amount;
         this.documentUID = documentUid;
         this.onSuccess = onSuccess;
+        this.onReject = onReject;
     }
 
     public AbstractContractUserBurnOperation(ContractUserActionType contractUserActionType,
@@ -45,7 +48,14 @@ public abstract class AbstractContractUserBurnOperation extends AbstractContract
     @Override
     public void callOnSuccess(TransactionReceipt receipt) {
         if (!isNull(onSuccess)) {
-            onSuccess.accept(contract.getBurnEvents(receipt).get(0));
+            onSuccess.accept(new BurnEvent(contract, receipt));
+        }
+    }
+
+    @Override
+    public void callOnReject(TransactionReceipt receipt) {
+        if (!isNull(onReject)) {
+            onReject.accept(new BurnReceipt(receipt, this));
         }
     }
 

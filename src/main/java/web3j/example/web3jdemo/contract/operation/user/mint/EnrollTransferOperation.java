@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.MintEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.MintReceipt;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.io.IOException;
@@ -33,8 +34,8 @@ public class EnrollTransferOperation extends AbstractContractUserMintOperation {
                                    BigInteger amount,
                                    String documentUid,
                                    String data,
-                                   Consumer<DldContract.MintEventResponse> onSuccess,
-                                   Consumer<TransactionReceipt> onReject,
+                                   Consumer<MintEvent> onSuccess,
+                                   Consumer<MintReceipt> onReject,
                                    Consumer<Exception> onError) {
         super(ACTION_TYPE, dldWallet, amount, documentUid, data, onSuccess, onReject, onError);
     }

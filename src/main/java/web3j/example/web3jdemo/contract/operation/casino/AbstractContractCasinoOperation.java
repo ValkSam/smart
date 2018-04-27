@@ -1,16 +1,16 @@
 package web3j.example.web3jdemo.contract.operation.casino;
 
+import lombok.Getter;
 import org.web3j.crypto.CipherException;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractCasinoActionType;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.domain.entity.Casino;
 
 import javax.annotation.PostConstruct;
 import java.io.IOException;
 import java.util.function.Consumer;
 
+@Getter
 public abstract class AbstractContractCasinoOperation extends AbstractContractOperation {
 
     protected final Casino casino;
@@ -18,9 +18,8 @@ public abstract class AbstractContractCasinoOperation extends AbstractContractOp
     public AbstractContractCasinoOperation(ContractCasinoActionType contractCasinoActionType,
                                            Casino casino,
                                            String data,
-                                           Consumer<TransactionReceipt> onReject,
                                            Consumer<Exception> onError) {
-        super(contractCasinoActionType, data, onReject, onError);
+        super(contractCasinoActionType, data, onError);
         this.casino = casino;
     }
 

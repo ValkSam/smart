@@ -6,7 +6,8 @@ import org.springframework.stereotype.Component;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 import java.io.IOException;
@@ -28,8 +29,8 @@ public class RegisterUserOperation extends AbstractContractUserRegisterOperation
 
     public RegisterUserOperation(DldWallet dldWallet,
                                  String data,
-                                 Consumer<DldContract.RegisterEventResponse> onSuccess,
-                                 Consumer<TransactionReceipt> onReject,
+                                 Consumer<RegisterEvent> onSuccess,
+                                 Consumer<RegisterUserReceipt> onReject,
                                  Consumer<Exception> onError) {
         super(ACTION_TYPE, dldWallet, data, onSuccess, onReject, onError);
     }

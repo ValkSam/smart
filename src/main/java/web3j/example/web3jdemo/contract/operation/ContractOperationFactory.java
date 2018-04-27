@@ -2,13 +2,16 @@ package web3j.example.web3jdemo.contract.operation;
 
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Component;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.casino.register.RegisterCasinoOperation;
-import web3j.example.web3jdemo.contract.operation.user.register.RegisterUserOperation;
 import web3j.example.web3jdemo.contract.operation.user.document.CancelEnrollRequestOperation;
 import web3j.example.web3jdemo.contract.operation.user.document.EnrollRequestOperation;
 import web3j.example.web3jdemo.contract.operation.user.mint.EnrollTransferOperation;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.contract.operation.user.register.RegisterUserOperation;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterCasinoReceipt;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
 import web3j.example.web3jdemo.domain.entity.Casino;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
@@ -31,8 +34,8 @@ public abstract class ContractOperationFactory {
             BigInteger amount,
             String documentUid,
             String data,
-            Consumer<DldContract.TransferEventResponse> onExecute,
-            Consumer<TransactionReceipt> onReject,
+            Consumer<RegisterDocumentEvent> onExecute,
+            Consumer<RegisterDocumentReceipt> onReject,
             Consumer<Exception> onError);
 
     @Lookup
@@ -48,8 +51,8 @@ public abstract class ContractOperationFactory {
             BigInteger amount,
             String documentUid,
             String data,
-            Consumer<DldContract.TransferEventResponse> onExecute,
-            Consumer<TransactionReceipt> onReject,
+            Consumer<RegisterDocumentEvent> onExecute,
+            Consumer<RegisterDocumentReceipt> onReject,
             Consumer<Exception> onError);
 
     @Lookup
@@ -65,8 +68,8 @@ public abstract class ContractOperationFactory {
             BigInteger amount,
             String documentUid,
             String data,
-            Consumer<DldContract.TransferEventResponse> onExecute,
-            Consumer<TransactionReceipt> onReject,
+            Consumer<RegisterDocumentEvent> onExecute,
+            Consumer<RegisterDocumentReceipt> onReject,
             Consumer<Exception> onError);
 
     @Lookup
@@ -78,8 +81,8 @@ public abstract class ContractOperationFactory {
     public abstract RegisterCasinoOperation registerCasinoOperation(
             Casino casino,
             String data,
-            Consumer<DldContract.TransferEventResponse> onExecute,
-            Consumer<TransactionReceipt> onReject,
+            Consumer<RegisterEvent> onExecute,
+            Consumer<RegisterCasinoReceipt> onReject,
             Consumer<Exception> onError);
 
     @Lookup
@@ -91,8 +94,8 @@ public abstract class ContractOperationFactory {
     public abstract RegisterUserOperation registerUserOperation(
             DldWallet dldWallet,
             String data,
-            Consumer<DldContract.TransferEventResponse> onExecute,
-            Consumer<TransactionReceipt> onReject,
+            Consumer<RegisterEvent> onExecute,
+            Consumer<RegisterUserReceipt> onReject,
             Consumer<Exception> onError);
 
 }

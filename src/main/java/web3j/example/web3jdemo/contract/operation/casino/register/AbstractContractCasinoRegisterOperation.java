@@ -3,7 +3,9 @@ package web3j.example.web3jdemo.contract.operation.casino.register;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractCasinoActionType;
 import web3j.example.web3jdemo.contract.operation.casino.AbstractContractCasinoOperation;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterCasinoReceipt;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
 import web3j.example.web3jdemo.domain.entity.Casino;
 
 import java.util.function.Consumer;
@@ -14,17 +16,19 @@ public abstract class AbstractContractCasinoRegisterOperation extends AbstractCo
 
     protected final Casino casino;
 
-    private Consumer<DldContract.RegisterEventResponse> onSuccess;
+    private Consumer<RegisterEvent> onSuccess;
+    private Consumer<RegisterCasinoReceipt> onReject;
 
     public AbstractContractCasinoRegisterOperation(ContractCasinoActionType contractCasinoActionType,
                                                    Casino casino,
                                                    String data,
-                                                   Consumer<DldContract.RegisterEventResponse> onSuccess,
-                                                   Consumer<TransactionReceipt> onReject,
+                                                   Consumer<RegisterEvent> onSuccess,
+                                                   Consumer<RegisterCasinoReceipt> onReject,
                                                    Consumer<Exception> onError) {
-        super(contractCasinoActionType, casino, data, onReject, onError);
+        super(contractCasinoActionType, casino, data, onError);
         this.casino = casino;
         this.onSuccess = onSuccess;
+        this.onReject = onReject;
     }
 
     public AbstractContractCasinoRegisterOperation(ContractCasinoActionType contractActionType,
@@ -37,7 +41,14 @@ public abstract class AbstractContractCasinoRegisterOperation extends AbstractCo
     @Override
     public void callOnSuccess(TransactionReceipt receipt) {
         if (!isNull(onSuccess)) {
-            onSuccess.accept(contract.getRegisterEvents(receipt).get(0));
+            onSuccess.accept(new RegisterEvent(contract, receipt));
+        }
+    }
+
+    @Override
+    public void callOnReject(TransactionReceipt receipt) {
+        if (!isNull(onReject)) {
+            onReject.accept(new RegisterCasinoReceipt(receipt, this));
         }
     }
 

@@ -13,11 +13,12 @@ import org.web3j.protocol.core.methods.response.EthBlock;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import rx.functions.Action1;
-import web3j.example.web3jdemo.blockchain.utils.ConvertHelper;
 import web3j.example.web3jdemo.blockchain.utils.Web3jHelper;
 import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactory;
 import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
+import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
+import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
 import web3j.example.web3jdemo.service.CasinoService;
 import web3j.example.web3jdemo.service.DldWalletService;
@@ -74,32 +75,28 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
 //        listenToEvent(contract, BigInteger.valueOf(41500));
 
-//        registerCasinoOne();
-//        registerUserOne();
+        registerCasinoOne();
+        registerUserOne();
 
-        Consumer<DldContract.TransferEventResponse> onExecute = (event) -> {
-            System.out.println("@@@@@@");
-            System.out.println(ConvertHelper.TransactionEventResponseToString(event));
-            System.out.println("@@@@@@");
+        Consumer<RegisterDocumentEvent> onRegisterDocumentSuccess = (event) -> {
+            System.out.println(">> OK ! " + event.getEventResponse().documentUID);
         };
 
-        Consumer<TransactionReceipt> onReject = (receipt) -> {
-            System.out.println("^^^^^");
-            System.out.println(receipt);
-            System.out.println("^^^^^");
+        Consumer<RegisterDocumentReceipt> onRegisterDocumentReject = (receipt) -> {
+            System.out.println(">> REJECTED ! " + receipt.getContractOperation().getDocumentUID());
         };
 
         Consumer<Exception> onError = (exception) -> {
-            System.out.println(" >>>>>>>>> I have not been able to execute !" + " due to: " + exception.getMessage()+" === "+exception.getCause().getMessage());
+            System.out.println(" >>>>>>>>> I have not been able to execute !" + " due to: " + exception.getMessage() + " === " + exception.getCause().getMessage());
         };
 
-      /*  AbstractContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
+        AbstractContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(11L),
                 "doc_7" + '\u241F' + "5",
                 "{\"invoiceAmount\":110}",
-                onExecute,
-                onReject,
+                onRegisterDocumentSuccess,
+                onRegisterDocumentReject,
                 onError);
 
         CompletableFuture<TransactionReceipt> receipt1 = enrollRequestOperation1.execute();
@@ -112,8 +109,8 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 BigInteger.valueOf(12L),
                 "doc_8" + '\u241F' + "5",
                 "{\"invoiceAmount\":120}",
-                onExecute,
-                onReject,
+                onRegisterDocumentSuccess,
+                onRegisterDocumentReject,
                 onError)
                 .execute();
 //        receipt2.get();
@@ -123,11 +120,11 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 BigInteger.valueOf(13L),
                 "doc_9" + '\u241F' + "5",
                 "{\"invoiceAmount\":130}",
-                onExecute,
-                onReject,
+                onRegisterDocumentSuccess,
+                onRegisterDocumentReject,
                 onError)
                 .execute();
-//        receipt3.get();*/
+//        receipt3.get();
 
         System.out.println("*************************************");
 
@@ -140,7 +137,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 "doc_7" + '\u241F' + "5",
                 "{\"invoiceResponseId\":1000}",
                 null,
-                onReject,
+                onRegisterDocumentReject,
                 onError)
                 .execute();
 //        receipt1_2.get();
@@ -149,8 +146,9 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(12L),
                 "doc_8" + '\u241F' + "5",
-                "{\"invoiceResponseId\":1001}", null,
-                onReject,
+                "{\"invoiceResponseId\":1001}",
+                null,
+                onRegisterDocumentReject,
                 onError)
                 .execute();
 //        receipt2_2.get();
@@ -159,8 +157,9 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(13L),
                 "doc_9" + '\u241F' + "5",
-                "{\"comment\":\"It's my decision\"}", null,
-                onReject,
+                "{\"comment\":\"It's my decision\"}",
+                null,
+                onRegisterDocumentReject,
                 onError)
                 .execute();
         receipt3_2.get();
@@ -186,7 +185,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 DefaultBlockParameter.valueOf(DefaultBlockParameterName.LATEST.name()))
                 .subscribe(event -> {
                     System.out.println("######");
-                    System.out.println(ConvertHelper.TransactionEventResponseToString(event));
+//                    System.out.println(ConvertHelper.TransactionEventResponseToString(event));
                     System.out.println("######");
                 });
     }
