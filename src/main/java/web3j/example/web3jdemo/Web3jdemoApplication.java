@@ -102,14 +102,14 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         delay(100);
 
-        CompletableFuture<TransactionReceipt> receipt2 = contractOperationFactory.registerEnrollRequestDocument(
+        AbstractContractOperation enrollRequestOperation2 = contractOperationFactory.registerEnrollRequestDocument(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(12L),
                 "doc_8" + '\u241F' + "5",
                 "{\"invoiceAmount\":120}",
                 onRegisterDocumentSuccess,
-                onRegisterDocumentReject)
-                .execute();
+                onRegisterDocumentReject);
+        CompletableFuture<TransactionReceipt> receipt2 = enrollRequestOperation2.execute();
 //        receipt2.get();
 
         CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.registerEnrollRequestDocument(
@@ -155,7 +155,9 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 null,
                 onRegisterDocumentReject)
                 .execute();
-        receipt3_2.get();
+//        receipt3_2.get();
+
+        delay(50000);
 
 //        listenToBlocks();
 

@@ -34,6 +34,7 @@ public abstract class AbstractContractOperation {
     protected int attemptCount = 1;
     protected DldContract contract;
     private LocalDateTime startDate = LocalDateTime.now();
+    private Exception lastException;
 
     public AbstractContractOperation(ContractActionType contractActionType,
                                      String data) {
@@ -64,13 +65,13 @@ public abstract class AbstractContractOperation {
                     try {
                         Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
                     } catch (InterruptedException e1) {
+                        Thread.currentThread().interrupt();
                         throw new ContractExecutionInterruptedException(e1);
                     }
                     if (attemptCount == MAX_ATTEMPTS_COUNT) {
                         throw new ContractUnderpricedException(e);
                     }
                     attemptCount++;
-                    System.out.println(1 / 0);
                 } else {
                     throw new ContractUnrecognizedException(e);
                 }
@@ -82,9 +83,11 @@ public abstract class AbstractContractOperation {
                 exception = (ContractException) e;
             } else {
                 exception = new ContractOperationGeneralException(e);
-//                e.printStackTrace();
             }
-            callOnReject(exception);
+            if (lastException == null) {
+                callOnReject(exception);
+            }
+            lastException = exception;
             throw exception;
         }
     }
@@ -116,4 +119,5 @@ public abstract class AbstractContractOperation {
             this.exceptionPhrase = exceptionPhrase;
         }
     }
+
 }
