@@ -16,13 +16,13 @@ public abstract class AbstractContractCasinoRegisterOperation extends AbstractCo
 
     private Consumer<DldContract.RegisterEventResponse> onSuccess;
 
-    public AbstractContractCasinoRegisterOperation(ContractCasinoActionType contractActionType,
+    public AbstractContractCasinoRegisterOperation(ContractCasinoActionType contractCasinoActionType,
                                                    Casino casino,
                                                    String data,
                                                    Consumer<DldContract.RegisterEventResponse> onSuccess,
                                                    Consumer<TransactionReceipt> onReject,
                                                    Consumer<Exception> onError) {
-        super(contractActionType, casino, data, onReject, onError);
+        super(contractCasinoActionType, casino, data, onReject, onError);
         this.casino = casino;
         this.onSuccess = onSuccess;
     }

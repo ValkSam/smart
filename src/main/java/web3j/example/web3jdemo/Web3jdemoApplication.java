@@ -90,10 +90,10 @@ public class Web3jdemoApplication implements CommandLineRunner {
         };
 
         Consumer<Exception> onError = (exception) -> {
-            System.out.println(" >>>>>>>>> I have not been able to execute !" + " due to: " + exception.getMessage()+" "+exception.getCause().getMessage());
+            System.out.println(" >>>>>>>>> I have not been able to execute !" + " due to: " + exception.getMessage()+" === "+exception.getCause().getMessage());
         };
 
-        /*AbstractContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
+      /*  AbstractContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
                 dldWalletService.getWalletOne(),
                 BigInteger.valueOf(11L),
                 "doc_7" + '\u241F' + "5",

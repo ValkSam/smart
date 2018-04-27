@@ -15,12 +15,12 @@ public abstract class AbstractContractCasinoOperation extends AbstractContractOp
 
     protected final Casino casino;
 
-    public AbstractContractCasinoOperation(ContractCasinoActionType contractActionType,
+    public AbstractContractCasinoOperation(ContractCasinoActionType contractCasinoActionType,
                                            Casino casino,
                                            String data,
                                            Consumer<TransactionReceipt> onReject,
                                            Consumer<Exception> onError) {
-        super(contractActionType, data, onReject, onError);
+        super(contractCasinoActionType, data, onReject, onError);
         this.casino = casino;
     }
 

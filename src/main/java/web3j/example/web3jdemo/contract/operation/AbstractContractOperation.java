@@ -8,6 +8,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactory;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractActionType;
+import web3j.example.web3jdemo.contract.operation.exception.ContractException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractExecutionInterruptedException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractUnderpricedException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractUnrecognizedException;
@@ -34,7 +35,7 @@ public abstract class AbstractContractOperation {
         }
     }
 
-    private static final Integer MAX_ATTEMPTS_COUNT = 30;
+    private static final Integer MAX_ATTEMPTS_COUNT = 60;
     private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 1000;
     protected final ContractActionType contractActionType;
     protected final String data;
@@ -97,6 +98,10 @@ public abstract class AbstractContractOperation {
                 return this.execute(remoteCall);
             }
         } catch (Exception e) {
+            if ((!(e.getCause() instanceof ContractException))
+                    && (!(e.getCause() instanceof ContractException))) {
+                e.printStackTrace();
+            }
             if (!isNull(onError)) {
                 onError.accept(e);
             }
