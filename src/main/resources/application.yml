@@ -20,7 +20,7 @@ ethereum:
         password: pwdnode1;
     transactionManager:
         custom: false
-        fast: false
+        fast: true
   admin:
     wallet: "0xfba2068908057b811a0a9623f072dd2f6455748a"
   cryptocurrency:

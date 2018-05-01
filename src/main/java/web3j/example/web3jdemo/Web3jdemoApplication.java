@@ -71,13 +71,12 @@ public class Web3jdemoApplication implements CommandLineRunner {
     public void run(String... args) throws IOException, InterruptedException, TransactionException, CipherException, ExecutionException {
         log.info(format(APP_MESSAGE_PATTERN, web3jHelper.getWeb3ClientVersion()));
 
-        DldContract contract = defaultContractFactory.defaultSingletonOwnerContractBuilder().build();
-
 //        listenToEvent(contract, BigInteger.valueOf(64000));
 
 //        registerCasinoOne();
 //        userManipulations.registerUserOne();
 
+        DldContract contract = defaultContractFactory.defaultSingletonOwnerContractBuilder().build();
         contract.registerEventObservable(
                 DefaultBlockParameter.valueOf(BigInteger.valueOf(64809)), DefaultBlockParameter.valueOf(BigInteger.valueOf(64979)))
                 .subscribe(event -> {
@@ -93,7 +92,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         EnrollManipulations enrollManipulations = new EnrollManipulations(dldWalletService, contractOperationFactory);
 //        enrollManipulations.registerDocuments(200);
-        enrollManipulations.registerOneDocument(5, 100);
+        enrollManipulations.registerOneDocument(13, 200);
 
 
         /*char[] ch = new char[30000];

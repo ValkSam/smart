@@ -2,7 +2,6 @@ package web3j.example.web3jdemo.contract.train;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
@@ -27,9 +26,9 @@ import static java.util.Objects.isNull;
 public class UserManipulations {
 
     private final Map<Integer, Integer> blocksStatistics = new ConcurrentHashMap<>();
-
+    private final DldWalletService dldWalletService;
+    private final ContractOperationFactory contractOperationFactory;
     private CountDownLatch latch;
-
     private Consumer<RegisterEvent> onRegisterUserSuccess = (event) -> {
         synchronized (ConcurrentMap.class) {
             Integer block = event.getReceipt().getBlockNumber().intValue();
@@ -39,7 +38,6 @@ public class UserManipulations {
         System.out.println(">> OK ! txType: " + event.getEventResponse().txType + " : " + event.getEventResponse().details + " : " + event.getReceipt().getBlockNumber());
         if (!isNull(latch)) latch.countDown();
     };
-
     private Consumer<RegisterUserReceipt> onRegisterUserReject = (receipt) -> {
         if (receipt.getException().isPresent()) {
             System.out.println(">> ERROR ! txType: " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getData() + " : " + receipt.getException().get() + " : " + Thread.currentThread());
@@ -53,9 +51,6 @@ public class UserManipulations {
         }
         if (!isNull(latch)) latch.countDown();
     };
-
-    private final DldWalletService dldWalletService;
-    private final ContractOperationFactory contractOperationFactory;
 
     public UserManipulations(DldWalletService dldWalletService, ContractOperationFactory contractOperationFactory) {
         this.dldWalletService = dldWalletService;

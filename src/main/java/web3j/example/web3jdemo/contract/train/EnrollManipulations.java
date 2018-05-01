@@ -26,20 +26,24 @@ import static java.util.Objects.isNull;
 @Setter
 public class EnrollManipulations {
 
-    private CountDownLatch latch;
-
     private final Map<Integer, Integer> blocksStatistics = new ConcurrentHashMap<>();
-
+    private final Map<Integer, Integer> blocksStatisticsSuccess = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> blocksStatisticsReject = new ConcurrentHashMap<>();
+    private final DldWalletService dldWalletService;
+    private final ContractOperationFactory contractOperationFactory;
+    private CountDownLatch latch;
     Consumer<RegisterDocumentEvent> onRegisterDocumentSuccess = (event) -> {
         synchronized (ConcurrentMap.class) {
             Integer block = event.getReceipt().getBlockNumber().intValue();
             Integer count = blocksStatistics.getOrDefault(block, 0);
             blocksStatistics.put(block, ++count);
+
+            Integer countSuccess = blocksStatisticsSuccess.getOrDefault(block, 0);
+            blocksStatisticsSuccess.put(block, ++countSuccess);
         }
         System.out.println(">> OK ! txType: " + event.getEventResponse().txType + " : " + event.getEventResponse().documentUID);
         if (!isNull(latch)) latch.countDown();
     };
-
     Consumer<RegisterDocumentReceipt> onRegisterDocumentReject = (receipt) -> {
         if (receipt.getException().isPresent()) {
             System.out.println(">> ERROR ! txType: " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getDocumentUID() + " : " + receipt.getException().get() + " : " + Thread.currentThread());
@@ -48,14 +52,14 @@ public class EnrollManipulations {
                 Integer block = receipt.getTransactionReceipt().get().getBlockNumber().intValue();
                 Integer count = blocksStatistics.getOrDefault(block, 0);
                 blocksStatistics.put(block, ++count);
+
+                Integer countReject = blocksStatisticsReject.getOrDefault(block, 0);
+                blocksStatisticsReject.put(block, ++countReject);
             }
             System.out.println(">> REJECTED txType: ! " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getDocumentUID() + " : " + Thread.currentThread());
         }
         if (!isNull(latch)) latch.countDown();
     };
-
-    private final DldWalletService dldWalletService;
-    private final ContractOperationFactory contractOperationFactory;
 
     public EnrollManipulations(DldWalletService dldWalletService, ContractOperationFactory contractOperationFactory) {
         this.dldWalletService = dldWalletService;
@@ -76,7 +80,9 @@ public class EnrollManipulations {
         latch.await();
 
         System.out.println("=================================");
-        System.out.println(blocksStatistics);
+        System.out.println("ALL: " + blocksStatistics);
+        System.out.println("SUCCESS: " + blocksStatisticsSuccess);
+        System.out.println("REJECT: " + blocksStatisticsReject);
     }
 
     public void registerOneDocument(int walletId, int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException {
@@ -89,7 +95,9 @@ public class EnrollManipulations {
         latch.await();
 
         System.out.println("=================================");
-        System.out.println(blocksStatistics);
+        System.out.println("ALL: " + blocksStatistics);
+        System.out.println("SUCCESS: " + blocksStatisticsSuccess);
+        System.out.println("REJECT: " + blocksStatisticsReject);
     }
 
     public void registerEnroll(int walletId) throws ExecutionException, InterruptedException, IOException, TransactionException {
