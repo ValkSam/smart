@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>web3j.example.web3jdemo.contract.operation.AbstractContractOperation</OriginalElement>
+  <nodes>
+    <node x="2068.623529411765" y="0.0">web3j.example.web3jdemo.contract.operation.AbstractContractOperation</node>
+    <node x="4205.5" y="540.0">web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation</node>
+    <node x="0.0" y="1302.0">web3j.example.web3jdemo.contract.operation.casino.register.RegisterCasinoOperation</node>
+    <node x="871.5" y="921.5">web3j.example.web3jdemo.contract.operation.user.mint.AbstractContractUserMintOperation</node>
+    <node x="1626.0" y="1302.0">web3j.example.web3jdemo.contract.operation.user.document.WithdrawRequestOperation</node>
+    <node x="4123.5" y="921.5">web3j.example.web3jdemo.contract.operation.user.register.AbstractContractUserRegisterOperation</node>
+    <node x="4065.0" y="1302.0">web3j.example.web3jdemo.contract.operation.user.register.RegisterUserOperation</node>
+    <node x="4936.5" y="921.5">web3j.example.web3jdemo.contract.operation.user.burn.AbstractContractUserBurnOperation</node>
+    <node x="3252.0" y="1302.0">web3j.example.web3jdemo.contract.operation.user.document.EnrollRequestOperation</node>
+    <node x="5749.5" y="921.5">web3j.example.web3jdemo.contract.operation.user.transfer.AbstractContractUserTransferOperation</node>
+    <node x="5691.0" y="1302.0">web3j.example.web3jdemo.contract.operation.user.transfer.UserToUserTransferOperation</node>
+    <node x="126.0" y="566.5">web3j.example.web3jdemo.contract.operation.casino.AbstractContractCasinoOperation</node>
+    <node x="2439.0" y="1302.0">web3j.example.web3jdemo.contract.operation.user.document.CancelEnrollRequestOperation</node>
+    <node x="58.5" y="921.5">web3j.example.web3jdemo.contract.operation.casino.register.AbstractContractCasinoRegisterOperation</node>
+    <node x="4878.0" y="1302.0">web3j.example.web3jdemo.contract.operation.user.burn.WithdrawTransferOperation</node>
+    <node x="813.0" y="1302.0">web3j.example.web3jdemo.contract.operation.user.mint.EnrollTransferOperation</node>
+    <node x="2457.5" y="815.0">web3j.example.web3jdemo.contract.operation.user.document.AbstractContractUserDocumentOperation</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.register.RegisterUserOperation" target="web3j.example.web3jdemo.contract.operation.user.register.AbstractContractUserRegisterOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="112.0" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.transfer.AbstractContractUserTransferOperation" target="web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation">
+      <point x="0.0" y="-112.0" />
+      <point x="6087.5" y="785.0" />
+      <point x="4666.3" y="785.0" />
+      <point x="204.80000000000018" y="112.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.mint.EnrollTransferOperation" target="web3j.example.web3jdemo.contract.operation.user.mint.AbstractContractUserMintOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="112.0" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.transfer.UserToUserTransferOperation" target="web3j.example.web3jdemo.contract.operation.user.transfer.AbstractContractUserTransferOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="112.0" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.casino.register.AbstractContractCasinoRegisterOperation" target="web3j.example.web3jdemo.contract.operation.casino.AbstractContractCasinoOperation">
+      <point x="0.0" y="-112.0" />
+      <point x="0.0" y="86.0" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.burn.AbstractContractUserBurnOperation" target="web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation">
+      <point x="0.0" y="-112.0" />
+      <point x="5274.5" y="795.0" />
+      <point x="4563.9" y="795.0" />
+      <point x="102.40000000000009" y="112.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.mint.AbstractContractUserMintOperation" target="web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation">
+      <point x="0.0" y="-112.0" />
+      <point x="1209.5" y="785.0" />
+      <point x="4256.7" y="785.0" />
+      <point x="-204.80000000000018" y="112.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation" target="web3j.example.web3jdemo.contract.operation.AbstractContractOperation">
+      <point x="0.0" y="-112.5" />
+      <point x="4461.5" y="515.0" />
+      <point x="2768.373529411765" y="515.0" />
+      <point x="233.25" y="245.0" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.register.AbstractContractUserRegisterOperation" target="web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation">
+      <point x="0.0" y="-112.0" />
+      <point x="0.0" y="112.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.document.WithdrawRequestOperation" target="web3j.example.web3jdemo.contract.operation.user.document.AbstractContractUserDocumentOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="2022.5" y="1277.0" />
+      <point x="2583.5" y="1277.0" />
+      <point x="-252.0" y="218.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.burn.WithdrawTransferOperation" target="web3j.example.web3jdemo.contract.operation.user.burn.AbstractContractUserBurnOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="112.0" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.casino.register.RegisterCasinoOperation" target="web3j.example.web3jdemo.contract.operation.casino.register.AbstractContractCasinoRegisterOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="112.0" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.document.AbstractContractUserDocumentOperation" target="web3j.example.web3jdemo.contract.operation.user.AbstractContractUserOperation">
+      <point x="0.0" y="-218.5" />
+      <point x="2835.5" y="795.0" />
+      <point x="4359.1" y="795.0" />
+      <point x="-102.40000000000009" y="112.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.document.CancelEnrollRequestOperation" target="web3j.example.web3jdemo.contract.operation.user.document.AbstractContractUserDocumentOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="0.0" y="218.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.user.document.EnrollRequestOperation" target="web3j.example.web3jdemo.contract.operation.user.document.AbstractContractUserDocumentOperation">
+      <point x="0.0" y="-59.0" />
+      <point x="3648.5" y="1277.0" />
+      <point x="3087.5" y="1277.0" />
+      <point x="252.0" y="218.5" />
+    </edge>
+    <edge source="web3j.example.web3jdemo.contract.operation.casino.AbstractContractCasinoOperation" target="web3j.example.web3jdemo.contract.operation.AbstractContractOperation">
+      <point x="0.0" y="-86.0" />
+      <point x="396.5" y="515.0" />
+      <point x="2301.873529411765" y="515.0" />
+      <point x="-233.25" y="245.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic Group" zoom="0.7210250131187685" x="4626.15152470828" y="924.7298464374956" />
+  <SelectedNodes>
+    <node>web3j.example.web3jdemo.contract.operation.AbstractContractOperation</node>
+  </SelectedNodes>
+  <Categories>
+    <Category>Methods</Category>
+    <Category>Properties</Category>
+  </Categories>
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+

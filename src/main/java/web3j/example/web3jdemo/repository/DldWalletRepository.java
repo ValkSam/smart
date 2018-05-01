@@ -1,10 +1,14 @@
 package web3j.example.web3jdemo.repository;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
 
 @Repository
 public class DldWalletRepository {
+
+    @Autowired
+    DldWalletStorage dldWalletStorage;
 
     public DldWallet findWalletOne() {
         return DldWallet.builder()
@@ -16,5 +20,10 @@ public class DldWalletRepository {
                 .addressPassiveKey("75229837313104562591578203806681600510108485549959610618236813012721680190914")
                 .build();
     }
+
+    public DldWallet findWalletById(int id) {
+        return dldWalletStorage.wallets.get(id - 1);
+    }
+
 
 }

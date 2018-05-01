@@ -17,9 +17,10 @@ import web3j.example.web3jdemo.blockchain.utils.Web3jHelper;
 import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactory;
 import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
-import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
-import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
+import web3j.example.web3jdemo.contract.train.EnrollManipulations;
+import web3j.example.web3jdemo.contract.train.UserManipulations;
 import web3j.example.web3jdemo.contract.wrapper.DldContract;
+import web3j.example.web3jdemo.domain.entity.DldWallet;
 import web3j.example.web3jdemo.service.CasinoService;
 import web3j.example.web3jdemo.service.DldWalletService;
 
@@ -27,7 +28,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 
 import static java.lang.String.format;
 
@@ -73,57 +73,36 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         DldContract contract = defaultContractFactory.defaultSingletonOwnerContractBuilder().build();
 
-//        listenToEvent(contract, BigInteger.valueOf(41500));
+//        listenToEvent(contract, BigInteger.valueOf(64000));
 
 //        registerCasinoOne();
-//        registerUserOne();
+//        userManipulations.registerUserOne();
 
-        Consumer<RegisterDocumentEvent> onRegisterDocumentSuccess = (event) -> {
-            System.out.println(">> OK ! txType: " + event.getEventResponse().txType + " : " + event.getEventResponse().documentUID);
-        };
+        contract.registerEventObservable(
+                DefaultBlockParameter.valueOf(BigInteger.valueOf(64809)), DefaultBlockParameter.valueOf(BigInteger.valueOf(64979)))
+                .subscribe(event -> {
+                    System.out.println(event);
+                });
 
-        Consumer<RegisterDocumentReceipt> onRegisterDocumentReject = (receipt) -> {
-            if (receipt.getException().isPresent()) {
-                System.out.println(">> ERROR ! txType: " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getDocumentUID() + " : " + receipt.getException().get() + " : " + Thread.currentThread());
-            } else
-                System.out.println(">> REJECTED txType: ! " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getDocumentUID() + " : " + Thread.currentThread());
-        };
+        web3jHelper.listenPendingTransaction(tx -> {
+            System.out.println("------------------------------------------------------------------------------------" + tx.getBlockNumber());
+        });
 
-        AbstractContractOperation enrollRequestOperation1 = contractOperationFactory.registerEnrollRequestDocument(
-                dldWalletService.getWalletOne(),
-                BigInteger.valueOf(11L),
-                "doc_7" + '\u241F' + "5",
-                "{\"invoiceAmount\":110}",
-                onRegisterDocumentSuccess,
-                onRegisterDocumentReject);
+        UserManipulations userManipulations = new UserManipulations(dldWalletService, contractOperationFactory);
+//        userManipulations.registerAllUsersAndExit(100);
 
-        CompletableFuture<TransactionReceipt> receipt1 = enrollRequestOperation1.execute();
-//        receipt1.get();
+        EnrollManipulations enrollManipulations = new EnrollManipulations(dldWalletService, contractOperationFactory);
+//        enrollManipulations.registerDocuments(200);
+        enrollManipulations.registerOneDocument(5, 100);
 
-        delay(100);
 
-        AbstractContractOperation enrollRequestOperation2 = contractOperationFactory.registerEnrollRequestDocument(
-                dldWalletService.getWalletOne(),
-                BigInteger.valueOf(12L),
-                "doc_8" + '\u241F' + "5",
-                "{\"invoiceAmount\":120}",
-                onRegisterDocumentSuccess,
-                onRegisterDocumentReject);
-        CompletableFuture<TransactionReceipt> receipt2 = enrollRequestOperation2.execute();
-//        receipt2.get();
+        /*char[] ch = new char[30000];
+        Arrays.fill(ch, 'a');
+        String str = new String(ch);*/
 
-        CompletableFuture<TransactionReceipt> receipt3 = contractOperationFactory.registerEnrollRequestDocument(
-                dldWalletService.getWalletOne(),
-                BigInteger.valueOf(13L),
-                "doc_9" + '\u241F' + "5",
-                "{\"invoiceAmount\":130}",
-                onRegisterDocumentSuccess,
-                onRegisterDocumentReject)
-                .execute();
-//        receipt3.get();
 
         System.out.println("*************************************");
-
+/*
 //        delay(5000);
 //        if (1 == 1) return;
 
@@ -157,7 +136,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 .execute();
 //        receipt3_2.get();
 
-        delay(50000);
+        delay(50000);*/
 
 //        listenToBlocks();
 
@@ -186,22 +165,14 @@ public class Web3jdemoApplication implements CommandLineRunner {
     }
 
     private void registerCasinoOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
-        AbstractContractOperation enrollRequestOperation0 = contractOperationFactory.registerCasinoOperation(
+        AbstractContractOperation enrollRequestOperation = contractOperationFactory.registerCasinoOperation(
                 casinoService.getCasinoOne(),
                 "{\"casinoId\":20}");
 
-        CompletableFuture<TransactionReceipt> receipt0 = enrollRequestOperation0.execute();
-        System.out.println(receipt0.get());
+        CompletableFuture<TransactionReceipt> receipt = enrollRequestOperation.execute();
+        System.out.println(receipt.get());
     }
 
-    private void registerUserOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
-        AbstractContractOperation enrollRequestOperation0 = contractOperationFactory.registerUserOperation(
-                dldWalletService.getWalletOne(),
-                "{\"userId\":2000}");
-
-        CompletableFuture<TransactionReceipt> receipt0 = enrollRequestOperation0.execute();
-        System.out.println(receipt0.get());
-    }
 
     private void listenToBlocks() {
         Action1<EthBlock> onNext = (block) -> {
@@ -211,6 +182,23 @@ public class Web3jdemoApplication implements CommandLineRunner {
             });
         };
         web3jHelper.listenToBlocks(onNext, 2);
+    }
+
+    private void makeStorage() {
+        for (int i = 0; i < 1000; i++) {
+            DldWallet wallet = web3jHelper.createDldWallet();
+            StringBuilder stringBuilder = new StringBuilder();
+            stringBuilder.append("wallets.add(DldWallet.builder()");
+            stringBuilder.append(".id(" + (i + 1) + "L)");
+            stringBuilder.append(".addressIndex(\"" + wallet.getAddressIndex() + "\")");
+            stringBuilder.append(".addressIndexKey(\"" + wallet.getAddressIndexKey() + "\")");
+            stringBuilder.append(".addressActive(\"" + wallet.getAddressActive() + "\")");
+            stringBuilder.append(".addressActiveKey(\"" + wallet.getAddressActiveKey() + "\")");
+            stringBuilder.append(".addressPassive(\"" + wallet.getAddressPassive() + "\")");
+            stringBuilder.append(".addressPassiveKey(\"" + wallet.getAddressPassiveKey() + "\")");
+            stringBuilder.append(".build());");
+            System.out.println(stringBuilder.toString());
+        }
     }
 
     //        DldContract.TransactionEventResponse transactionEventResponse1 = contract.getTransactionEvents(receipt1.get()).get(0);

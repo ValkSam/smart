@@ -20,4 +20,8 @@ public class DldWalletService {
         return dldWalletRepository.findWalletOne();
     }
 
+    public DldWallet getWalletById(int id) {
+        return dldWalletRepository.findWalletById(id);
+    }
+
 }
