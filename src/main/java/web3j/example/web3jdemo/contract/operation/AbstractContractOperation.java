@@ -26,7 +26,7 @@ import static web3j.example.web3jdemo.contract.operation.AbstractContractOperati
 public abstract class AbstractContractOperation {
 
     private static final Integer MAX_ATTEMPTS_COUNT = 60;
-    private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 1000;
+    private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 100;
     protected final ContractActionType contractActionType;
     protected final String data;
     @Autowired

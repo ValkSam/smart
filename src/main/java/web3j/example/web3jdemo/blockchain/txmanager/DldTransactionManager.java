@@ -1,5 +1,9 @@
 package web3j.example.web3jdemo.blockchain.txmanager;
 
+import org.springframework.beans.factory.config.ConfigurableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 import org.web3j.crypto.Credentials;
 import org.web3j.crypto.RawTransaction;
 import org.web3j.crypto.TransactionEncoder;
@@ -13,6 +17,9 @@ import org.web3j.utils.Numeric;
 import java.io.IOException;
 import java.math.BigInteger;
 
+@Component
+@Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
+@ConditionalOnProperty(name = "ethereum.contract.transactionManager.custom", havingValue = "true")
 public class DldTransactionManager extends TransactionManager {
 
     private final Credentials credentials;

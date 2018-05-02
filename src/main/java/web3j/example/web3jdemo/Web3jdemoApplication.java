@@ -92,7 +92,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         EnrollManipulations enrollManipulations = new EnrollManipulations(dldWalletService, contractOperationFactory);
 //        enrollManipulations.registerDocuments(200);
-        enrollManipulations.registerOneDocument(13, 200);
+        enrollManipulations.registerOneDocument(15, 200);
 
 
         /*char[] ch = new char[30000];

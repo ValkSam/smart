@@ -78,8 +78,8 @@ public class EthereumConfig {
     @Value("${ethereum.contract.transactionManager.custom}")
     private Boolean useCustomTransactionManager;
 
-    @Value("${ethereum.contract.transactionManager.fast}")
-    private Boolean useFastRawTransactionManager;
+    @Value("${ethereum.contract.transactionManager.manageNonce}")
+    private Boolean useManagedNonce;
 
     public BigInteger getDefaultGasLimit() {
         return BigInteger.valueOf(cryptocurrencyContractGasLimit);

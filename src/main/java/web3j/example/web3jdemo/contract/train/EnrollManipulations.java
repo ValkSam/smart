@@ -29,6 +29,7 @@ public class EnrollManipulations {
     private final Map<Integer, Integer> blocksStatistics = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> blocksStatisticsSuccess = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> blocksStatisticsReject = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> blocksStatisticsError = new ConcurrentHashMap<>();
     private final DldWalletService dldWalletService;
     private final ContractOperationFactory contractOperationFactory;
     private CountDownLatch latch;
@@ -46,6 +47,14 @@ public class EnrollManipulations {
     };
     Consumer<RegisterDocumentReceipt> onRegisterDocumentReject = (receipt) -> {
         if (receipt.getException().isPresent()) {
+            synchronized (ConcurrentMap.class) {
+                Integer block = 0;
+                Integer count = blocksStatistics.getOrDefault(block, 0);
+                blocksStatistics.put(block, ++count);
+
+                Integer countError = blocksStatisticsError.getOrDefault(block, 0);
+                blocksStatisticsError.put(block, ++countError);
+            }
             System.out.println(">> ERROR ! txType: " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getDocumentUID() + " : " + receipt.getException().get() + " : " + Thread.currentThread());
         } else {
             synchronized (ConcurrentMap.class) {
@@ -83,6 +92,7 @@ public class EnrollManipulations {
         System.out.println("ALL: " + blocksStatistics);
         System.out.println("SUCCESS: " + blocksStatisticsSuccess);
         System.out.println("REJECT: " + blocksStatisticsReject);
+        System.out.println("ERROR: " + blocksStatisticsError);
     }
 
     public void registerOneDocument(int walletId, int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException {
@@ -98,6 +108,7 @@ public class EnrollManipulations {
         System.out.println("ALL: " + blocksStatistics);
         System.out.println("SUCCESS: " + blocksStatisticsSuccess);
         System.out.println("REJECT: " + blocksStatisticsReject);
+        System.out.println("ERROR: " + blocksStatisticsError);
     }
 
     public void registerEnroll(int walletId) throws ExecutionException, InterruptedException, IOException, TransactionException {
