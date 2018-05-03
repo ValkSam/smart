@@ -1,0 +1,536 @@
+pragma solidity ^0.4.21;
+
+contract utilAware {
+    
+    function stringToBytes32(string self) public pure returns (bytes32 result) {
+        if (bytes(self).length == 0) {
+            return "";
+        }
+
+        assembly {
+            result := mload(add(self, 32))
+        }
+    }
+    
+}
+
+contract Rooter {
+
+    address private rooter;
+
+    function root() public{
+        rooter = msg.sender;
+    }
+
+    function isRooter(address rooterAddress) public view returns(bool){
+        return rooter == rooterAddress;
+    }
+
+}
+
+contract eventAware {
+
+    enum TransactionType {
+        REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, WITHDRAW, DEPOSIT, TAKE, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST, WITHDRAW_REQUEST
+    }
+
+}
+
+
+contract eventRegisterAware is eventAware {
+
+    event Register(
+        TransactionType txType,
+        address registeredAddress,
+        string details
+        );
+
+}
+
+contract eventRegisterDocumentAware is eventAware {
+
+    event RegisterDocument(
+        TransactionType txType,
+        address user,
+        string documentUID,
+        uint amount,
+        string details
+        );
+
+}
+
+contract eventTransferAware is eventAware {
+
+    event Transfer(
+        TransactionType txType,
+        address user,
+        address senderActive,
+        address receiverIndex,
+        address receiverActive,
+        uint amount,
+        string details
+        );
+
+}
+
+contract eventExchangeAware is eventAware {
+
+    event Exchange(
+        TransactionType txType,
+        address user,
+        address sender,
+        address receiver,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+}
+
+contract eventMintAware is eventAware {
+
+    event Mint(
+        TransactionType txType,
+        address user,
+        address mintedAddress,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+    event Burn(
+        TransactionType txType,
+        address user,
+        address burnedAddress,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+}
+
+contract User is utilAware, eventRegisterAware {
+
+    Rooter rooter;
+
+    struct Balance {
+        address addr;
+        uint amount;
+    }
+
+    struct UserBalance {
+        Balance active;
+        Balance passive;
+    }
+
+    struct DocLog {
+        uint blockNumber;
+        uint amount;
+    }
+
+    struct UserData {
+        bool isActive;
+        UserBalance balance;
+        bytes32[] docLogIndex;
+        mapping(bytes32 => DocLog) docLog;
+    }
+
+    mapping (address => UserData) users;
+    address[] usersIndex;
+
+    function exists(address indexAddress) public view returns(bool){
+        users[indexAddress].balance.active.addr != address(0x0);
+    }
+
+    function isActive(address indexAddress) public view returns(bool){
+        return users[indexAddress].isActive;
+    }
+
+    function account(address indexAddress) public view returns(address) {
+        return users[indexAddress].balance.active.addr;
+    }
+
+    function balanceOf(address indexAddress) public view returns(uint) {
+        return users[indexAddress].balance.active.amount;
+    }
+
+    function balanceChange(address indexAddress, uint amount) public
+        //TODO
+    {
+        users[indexAddress].balance.active.amount += amount;
+    }
+
+    function passiveAccount(address indexAddress) public view returns(address) {
+        return users[indexAddress].balance.passive.addr;
+    }
+
+    function balancePassiveOf(address indexAddress) public view returns(uint) {
+        return users[indexAddress].balance.passive.amount;
+    }
+
+    function balancePassiveChange(address indexAddress, uint amount) public
+        //TODO
+    {
+        users[indexAddress].balance.passive.amount += amount;
+    }
+
+    function addDocument(address indexAddress, string documentUID, uint amount) public
+        onlyByRooter()
+    {
+        require(bytes(documentUID).length != 0);
+        require(bytes(documentUID).length <= 32);
+        require(!documentExists(indexAddress, documentUID));
+        users[indexAddress].docLog[keccak256(documentUID)] = DocLog(block.number, amount);
+        users[indexAddress].docLogIndex.push(stringToBytes32(documentUID));
+    }
+
+    function removeDocument(address indexAddress, string documentUID) public
+        onlyByRooter()
+    {
+        require(documentExists(indexAddress, documentUID));
+        uint idx = getArrayItemIndex(users[indexAddress].docLogIndex, documentUID);
+        assert(idx != uint(-1));
+        delete(users[indexAddress].docLog[keccak256(documentUID)]);
+        removeArrayItem(users[indexAddress].docLogIndex, idx);
+    }
+
+    function documentsUIDs(address indexAddress) public view
+        returns (bytes32[] documentUIDs)
+    {
+        return users[indexAddress].docLogIndex;
+    }
+
+    function documentExists(address indexAddress, string documentUID) public view returns(bool){
+        bytes32 documentUIDHash = keccak256(documentUID);
+        return users[indexAddress].docLog[documentUIDHash].blockNumber != 0;
+    }
+
+    function documentAmount(address indexAddress, string documentUID) public view returns(uint){
+        return users[indexAddress].docLog[keccak256(documentUID)].amount;
+    }
+
+    function register(address indexAddress, address active, address passive, string details) public
+        onlyByRooter()
+    {
+        require(users[indexAddress].balance.active.addr == address(0x0));
+        require(indexAddress != active);
+        require(indexAddress != passive);
+        require(active != passive);
+
+        usersIndex.push(indexAddress);
+        users[indexAddress] = UserData(
+            {
+                isActive: true,
+                balance: UserBalance(Balance(active, 0), Balance(passive, 0)),
+                docLogIndex: new bytes32[](0)
+            });
+
+        emit Register(
+            TransactionType.REGISTER_USER,
+            indexAddress,
+            details);
+    }
+
+    function getArrayItemIndex(bytes32[] storage self, string value) private view returns (uint index){
+        bytes32 valueToSearch = stringToBytes32(value);
+
+        for (uint i = 0; i<self.length; i++){
+            if (self[i] == valueToSearch){
+                return i;
+                break;
+            }
+        }
+
+        return uint(-1);
+    }
+
+    function removeArrayItem(bytes32[] storage self, uint index) private {
+        if (index >= self.length) return;
+
+        for (uint i = index; i<self.length-1; i++){
+            self[i] = self[i+1];
+        }
+
+        self.length--;
+    }
+
+    modifier onlyByRooter() {
+        require (rooter.isRooter(msg.sender));
+        _;
+    }
+
+}
+
+contract Casino is eventRegisterAware {
+
+    Rooter rooter;
+
+    struct CasinoData {
+        bool isActive;
+        uint amount;
+    }
+
+    mapping(address => CasinoData) casinos;
+    address[] casinosIndex;
+
+    function register(address casinoAddress, string details) public
+        onlyByRooter()
+    {
+        require(getArrayItemIndex(casinosIndex, casinoAddress) == uint(-1));
+
+        casinosIndex.push(casinoAddress);
+        casinos[casinoAddress] = CasinoData(
+            {
+                isActive: true,
+                amount: 0
+            });
+
+        emit Register(
+            TransactionType.REGISTER_CASINO,
+            casinoAddress,
+            details);
+    }
+
+    function exists(address casinoAddress) public view returns(bool) {
+        return casinos[casinoAddress].isActive;
+    }
+
+    function balanceOf(address casinoAddress) public view returns(uint) {
+        return casinos[casinoAddress].amount;
+    }
+
+    function balanceChange(address casinoAddress, uint amount) public {
+        casinos[casinoAddress].amount += amount;
+    }
+
+    function getArrayItemIndex(address[] storage self, address value) private view returns (uint index){
+
+        bytes32 valueToSearch = keccak256(value);
+
+        for (uint i = 0; i<self.length; i++){
+            if (keccak256(self[i]) == valueToSearch){
+                return i;
+                break;
+            }
+        }
+
+        return uint(-1);
+    }
+
+    modifier onlyByRooter() {
+        require (rooter.isRooter(msg.sender));
+        _;
+    }
+
+}
+
+contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventRegisterDocumentAware {
+
+    Rooter rooter;
+
+    Casino casino;
+
+    User user;
+
+
+    function DLT_5() public {
+
+    }
+
+    function registerCasino(address casinoAddress, string details) public {
+        casino.register(casinoAddress, details);
+    }
+
+    function registerUser(address indexAddress, address active, address passive, string details) public {
+        user.register(indexAddress, active, passive, details);
+    }
+
+    function registerEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByRooter()
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+
+        user.addDocument(indexAddress, documentUID, amount);
+
+        emit RegisterDocument(
+            TransactionType.ENROLL_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function cancelEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUserOrRooter(indexAddress)
+    {
+
+        user.removeDocument(indexAddress, documentUID);
+
+        emit RegisterDocument(
+            TransactionType.CANCEL_ENROLL_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function registerWithdrawRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+
+        user.addDocument(indexAddress, documentUID, amount);
+
+        emit RegisterDocument(
+            TransactionType.WITHDRAW_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function enroll(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+
+        user.removeDocument(indexAddress, documentUID);
+
+        user.balanceChange(indexAddress, amount);
+
+        emit Mint(
+            TransactionType.ENROLL,
+            indexAddress,
+            user.account(indexAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+    function withdraw(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+        user.balancePassiveOf(indexAddress) >= amount;
+
+        user.removeDocument(indexAddress, documentUID);
+
+        user.balancePassiveChange(indexAddress, (-amount));
+
+        emit Burn(
+            TransactionType.WITHDRAW,
+            indexAddress,
+            user.passiveAccount(indexAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+
+    function transferCoin(address indexAddress, address receiverIndexAddress, uint amount, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+        require(user.balanceOf(indexAddress) >= amount);
+
+        user.balanceChange(indexAddress, (-amount));
+        user.balanceChange(receiverIndexAddress, amount);
+
+        emit Transfer(
+            TransactionType.TRANSFER,
+            indexAddress,
+            user.account(indexAddress),
+            receiverIndexAddress,
+            user.account(receiverIndexAddress),
+            amount,
+            details);
+    }
+
+    function depositCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+        onlyForExistedCasino(casinoAddress)
+    {
+        require(amount > 0);
+        require(user.balanceOf(indexAddress) >= amount);
+
+        casino.balanceChange(casinoAddress, amount);
+        user.balanceChange(indexAddress, (-amount));
+
+        emit Exchange(
+            TransactionType.DEPOSIT,
+            indexAddress,
+            user.account(indexAddress),
+            casinoAddress,
+            amount,
+            documentUID,
+            details);
+    }
+
+    function takeCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+        onlyForExistedCasino(casinoAddress)
+    {
+        require(amount > 0);
+        require(casino.balanceOf(casinoAddress) >= amount);
+
+        casino.balanceChange(casinoAddress, (-amount));
+        user.balanceChange(indexAddress, amount);
+
+        emit Exchange(
+            TransactionType.TAKE,
+            indexAddress,
+            casinoAddress,
+            user.account(indexAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+    modifier onlyForExistedCasino(address casinoAddress) {
+        require(casino.exists(casinoAddress));
+        _;
+    }
+
+    function removeArrayItem(bytes32[] storage self, uint index) private {
+        if (index >= self.length) return;
+
+        for (uint i = index; i<self.length-1; i++){
+            self[i] = self[i+1];
+        }
+
+        self.length--;
+    }
+
+    modifier onlyByRooter() {
+        require (rooter.isRooter(msg.sender));
+        _;
+    }
+
+    modifier onlyByUser(address indexAddress) {
+        require (msg.sender == indexAddress);
+        _;
+    }
+
+    modifier onlyForActiveUser(address indexAddress) {
+        require (user.isActive(indexAddress));
+        _;
+    }
+
+    modifier onlyByUserOrRooter(address indexAddress) {
+        if (msg.sender == indexAddress) {
+            require(user.exists(indexAddress));
+            require (user.isActive(indexAddress));
+        } else {
+            require(rooter.isRooter(msg.sender));
+        }
+        _;
+    }
+
+}

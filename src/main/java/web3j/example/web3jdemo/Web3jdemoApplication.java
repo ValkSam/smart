@@ -76,24 +76,24 @@ public class Web3jdemoApplication implements CommandLineRunner {
 //        registerCasinoOne();
 //        userManipulations.registerUserOne();
 
-        DldContract contract = defaultContractFactory.defaultSingletonOwnerContractBuilder().build();
+        /*DldContract contract = defaultContractFactory.defaultSingletonOwnerContractBuilder().build();
         contract.registerEventObservable(
                 DefaultBlockParameter.valueOf(BigInteger.valueOf(64809)), DefaultBlockParameter.valueOf(BigInteger.valueOf(64979)))
                 .subscribe(event -> {
                     System.out.println(event);
-                });
+                });*/
 
         web3jHelper.listenPendingTransaction(tx -> {
             System.out.println("------------------------------------------------------------------------------------" + tx.getBlockNumber());
         });
 
         UserManipulations userManipulations = new UserManipulations(dldWalletService, contractOperationFactory);
-//        userManipulations.registerAllUsersAndExit(100);
+        userManipulations.registerAllUsersAndExit(100);
 
         EnrollManipulations enrollManipulations = new EnrollManipulations(dldWalletService, contractOperationFactory);
 //        enrollManipulations.registerDocuments(200);
-        int walletId = 16;
-//        enrollManipulations.registerOneDocument(walletId, 100);
+        int walletId = 17;
+        enrollManipulations.registerOneDocument(walletId, 10);
         enrollManipulations.printDocs(walletId);
 
         System.out.println("===================================");
