@@ -3,6 +3,8 @@ package web3j.example.web3jdemo.contract.operation;
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Component;
 import web3j.example.web3jdemo.contract.operation.casino.register.RegisterCasinoOperation;
+import web3j.example.web3jdemo.contract.operation.owner.readonly.addressinfo.document.GetUserDocumentBlockOperation;
+import web3j.example.web3jdemo.contract.operation.owner.readonly.addressinfo.document.GetUserDocumentListOperation;
 import web3j.example.web3jdemo.contract.operation.user.document.CancelEnrollRequestOperation;
 import web3j.example.web3jdemo.contract.operation.user.document.EnrollRequestOperation;
 import web3j.example.web3jdemo.contract.operation.user.mint.EnrollTransferOperation;
@@ -92,5 +94,21 @@ public abstract class ContractOperationFactory {
             String data,
             Consumer<RegisterEvent> onExecute,
             Consumer<RegisterUserReceipt> onReject);
+
+    @Lookup
+    public abstract GetUserDocumentListOperation getUserDocumentListOperation(
+            String address);
+
+    @Lookup
+    public abstract GetUserDocumentListOperation getUserDocumentListOperation(
+            DldWallet wallet);
+
+    @Lookup
+    public abstract GetUserDocumentBlockOperation getUserDocumentBlockOperation(
+            String address, String documentUID);
+
+    @Lookup
+    public abstract GetUserDocumentBlockOperation getUserDocumentBlockOperation(
+            DldWallet wallet, String documentUID);
 
 }

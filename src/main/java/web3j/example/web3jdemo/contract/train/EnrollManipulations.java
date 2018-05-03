@@ -8,10 +8,12 @@ import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
+import web3j.example.web3jdemo.domain.entity.DldWallet;
 import web3j.example.web3jdemo.service.DldWalletService;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -137,6 +139,20 @@ public class EnrollManipulations {
 
         CompletableFuture<TransactionReceipt> receipt = enrollRequestOperation.execute();
 
+    }
+
+    public void printDocs(int walletId) throws IOException, TransactionException {
+        DldWallet dldWallet = dldWalletService
+                .getWalletById(walletId);
+        List<String> userDocs = contractOperationFactory.getUserDocumentListOperation(dldWallet)
+                .execute();
+        System.out.println((userDocs).size());
+        long startTime = System.nanoTime();
+        for (String documentUID : userDocs) {
+            System.out.println(documentUID + " : " + contractOperationFactory.getUserDocumentBlockOperation(dldWallet, documentUID)
+                    .execute());
+        }
+        System.out.println((System.nanoTime() - startTime) / 1000000);
     }
 
 }

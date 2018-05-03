@@ -92,7 +92,12 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
         EnrollManipulations enrollManipulations = new EnrollManipulations(dldWalletService, contractOperationFactory);
 //        enrollManipulations.registerDocuments(200);
-        enrollManipulations.registerOneDocument(15, 200);
+        int walletId = 16;
+//        enrollManipulations.registerOneDocument(walletId, 100);
+        enrollManipulations.printDocs(walletId);
+
+        System.out.println("===================================");
+
 
 
         /*char[] ch = new char[30000];

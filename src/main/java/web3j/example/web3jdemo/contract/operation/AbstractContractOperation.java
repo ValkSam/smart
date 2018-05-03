@@ -29,8 +29,10 @@ public abstract class AbstractContractOperation {
     private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 100;
     protected final ContractActionType contractActionType;
     protected final String data;
+
     @Autowired
     protected DefaultContractFactory contractFactory;
+
     protected int attemptCount = 1;
     protected DldContract contract;
     private LocalDateTime startDate = LocalDateTime.now();
