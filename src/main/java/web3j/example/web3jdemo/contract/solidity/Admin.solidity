@@ -1,0 +1,87 @@
+pragma solidity ^0.4.21;
+
+import "browser/Events.sol";
+
+contract Owned is eventSetOwnershipAware {
+    address public owner;
+    address public newOwner;
+
+    function Owned() public {
+        owner = msg.sender;
+        emit SetOwnership(
+            TransactionType.SET_OWNER,
+            address(0x0),
+            owner);
+    }
+
+    function setOwnership(address newOwnerAddress) public
+        onlyByOwner
+    {
+        newOwner = newOwnerAddress;
+    }
+
+    function acceptOwnership() public
+        onlyByNewOwner
+    {
+        owner = newOwner;
+        newOwner = address(0x0);
+        emit SetOwnership(
+            TransactionType.SET_OWNER,
+            owner,
+            newOwner);
+    }
+
+    modifier onlyByOwner {
+        require(msg.sender == owner);
+        _;
+    }
+
+    modifier onlyByNewOwner {
+        require(msg.sender == newOwner);
+        _;
+    }
+
+}
+
+contract Admin is Owned, eventSetAddAdminAware {
+
+    mapping (address => bool) admins;
+    address[] adminsIndex;
+
+    uint private a;
+
+    function Admin() public{
+        admins[msg.sender] = true;
+        adminsIndex.push(msg.sender);
+        emit AddAdmin(
+            TransactionType.REGISTER_ADMIN,
+            msg.sender,
+            adminsIndex.length
+        );
+    }
+
+    function register(address newAdminAddress) public
+        onlyByOwner
+    {
+        admins[newAdminAddress] = true;
+        adminsIndex.push(newAdminAddress);
+        emit AddAdmin(
+            TransactionType.REGISTER_ADMIN,
+            newAdminAddress,
+            adminsIndex.length
+        );
+    }
+
+    function isAdmin(address adminAddress) public view returns(bool){
+        return admins[adminAddress];
+    }
+
+    function setA(uint v) public {
+        a = v;
+    }
+
+    function getA() public view returns (uint){
+        return a;
+    }
+
+}

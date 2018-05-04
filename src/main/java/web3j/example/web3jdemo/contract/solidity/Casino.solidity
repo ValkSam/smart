@@ -1,0 +1,68 @@
+pragma solidity ^0.4.21;
+
+import "browser/Libs.sol";
+import "browser/Events.sol";
+import "browser/Admin.sol";
+
+contract Casino is eventRegisterAware {
+
+    using Arrays for address[];
+
+    Admin admin;
+
+    struct CasinoData {
+        bool isActive;
+        uint amount;
+    }
+
+    mapping(address => CasinoData) casinos;
+    address[] casinosIndex;
+
+    function Casino(address adminContractAddress) public {
+        admin = Admin(adminContractAddress);
+    }
+
+    function register(address casinoAddress, string details) public
+        onlyByAdmin()
+    {
+        require(casinosIndex.getArrayItemIndex(casinoAddress) == uint(-1));
+
+        casinosIndex.push(casinoAddress);
+        casinos[casinoAddress] = CasinoData(
+            {
+                isActive: true,
+                amount: 0
+            });
+
+        emit Register(
+            TransactionType.REGISTER_CASINO,
+            casinoAddress,
+            details);
+    }
+
+    function setA(uint v) public {
+        admin.setA(v);
+    }
+
+    function getA() public view returns (uint){
+        return admin.getA();
+    }
+
+    function exists(address casinoAddress) public view returns(bool) {
+        return casinos[casinoAddress].isActive;
+    }
+
+    function balanceOf(address casinoAddress) public view returns(uint) {
+        return casinos[casinoAddress].amount;
+    }
+
+    function balanceChange(address casinoAddress, uint amount) public {
+        casinos[casinoAddress].amount += amount;
+    }
+
+    modifier onlyByAdmin() {
+        require (admin.isAdmin(msg.sender));
+        _;
+    }
+
+}

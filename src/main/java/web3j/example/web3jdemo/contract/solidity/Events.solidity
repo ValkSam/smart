@@ -1,0 +1,96 @@
+pragma solidity ^0.4.21;
+
+contract eventAware {
+
+    enum TransactionType {
+        SET_OWNER, REGISTER_ADMIN, REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, WITHDRAW, DEPOSIT, TAKE, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST, WITHDRAW_REQUEST
+    }
+
+}
+
+contract eventSetOwnershipAware is eventAware {
+    event SetOwnership(
+        TransactionType txType,
+        address currentOwner,
+        address newOwner);
+}
+
+contract eventSetAddAdminAware is eventAware {
+    event AddAdmin(
+        TransactionType txType,
+        address adminAddress,
+        uint count
+    );
+}
+
+contract eventRegisterAware is eventAware {
+
+    event Register(
+        TransactionType txType,
+        address registeredAddress,
+        string details
+        );
+
+}
+
+contract eventRegisterDocumentAware is eventAware {
+
+    event RegisterDocument(
+        TransactionType txType,
+        address user,
+        string documentUID,
+        uint amount,
+        string details
+        );
+
+}
+
+contract eventTransferAware is eventAware {
+
+    event Transfer(
+        TransactionType txType,
+        address user,
+        address senderActive,
+        address receiverIndex,
+        address receiverActive,
+        uint amount,
+        string details
+        );
+
+}
+
+contract eventExchangeAware is eventAware {
+
+    event Exchange(
+        TransactionType txType,
+        address user,
+        address sender,
+        address receiver,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+}
+
+contract eventMintAware is eventAware {
+
+    event Mint(
+        TransactionType txType,
+        address user,
+        address mintedAddress,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+    event Burn(
+        TransactionType txType,
+        address user,
+        address burnedAddress,
+        uint amount,
+        string documentUID,
+        string details
+        );
+
+}

@@ -1,0 +1,222 @@
+pragma solidity ^0.4.21;
+
+import "browser/Libs.sol";
+import "browser/Events.sol";
+import "browser/Admin.sol";
+import "browser/Casino.sol";
+import "browser/User.sol";
+
+contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventRegisterDocumentAware {
+
+    Admin admin;
+
+    Casino casino;
+
+    User user;
+
+
+    function DLT_5(address adminContractAddress,
+        address casinoContractAddress,
+        address userContractAddress) public {
+        admin = Admin(adminContractAddress);
+        casino = Casino(casinoContractAddress);
+        user = User(userContractAddress);
+    }
+
+    function registerCasino(address casinoAddress, string details) public {
+        casino.register(casinoAddress, details);
+    }
+
+    function registerUser(address indexAddress, address active, address passive, string details) public {
+        user.register(indexAddress, active, passive, details);
+    }
+
+    function registerEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByAdmin()
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+
+        user.addDocument(indexAddress, documentUID, amount);
+
+        emit RegisterDocument(
+            TransactionType.ENROLL_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function cancelEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUserOrAdmin(indexAddress)
+    {
+
+        user.removeDocument(indexAddress, documentUID);
+
+        emit RegisterDocument(
+            TransactionType.CANCEL_ENROLL_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function registerWithdrawRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+
+        user.addDocument(indexAddress, documentUID, amount);
+
+        emit RegisterDocument(
+            TransactionType.WITHDRAW_REQUEST,
+            indexAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function enroll(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+
+        user.removeDocument(indexAddress, documentUID);
+
+        user.balanceChange(indexAddress, amount);
+
+        emit Mint(
+            TransactionType.ENROLL,
+            indexAddress,
+            user.account(indexAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+    function withdraw(address indexAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+        user.balancePassiveOf(indexAddress) >= amount;
+
+        user.removeDocument(indexAddress, documentUID);
+
+        user.balancePassiveChange(indexAddress, (-amount));
+
+        emit Burn(
+            TransactionType.WITHDRAW,
+            indexAddress,
+            user.passiveAccount(indexAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+
+    function transferCoin(address indexAddress, address receiverIndexAddress, uint amount, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+    {
+        require(amount > 0);
+        require(user.balanceOf(indexAddress) >= amount);
+
+        user.balanceChange(indexAddress, (-amount));
+        user.balanceChange(receiverIndexAddress, amount);
+
+        emit Transfer(
+            TransactionType.TRANSFER,
+            indexAddress,
+            user.account(indexAddress),
+            receiverIndexAddress,
+            user.account(receiverIndexAddress),
+            amount,
+            details);
+    }
+
+    function depositCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+        onlyForExistedCasino(casinoAddress)
+    {
+        require(amount > 0);
+        require(user.balanceOf(indexAddress) >= amount);
+
+        casino.balanceChange(casinoAddress, amount);
+        user.balanceChange(indexAddress, (-amount));
+
+        emit Exchange(
+            TransactionType.DEPOSIT,
+            indexAddress,
+            user.account(indexAddress),
+            casinoAddress,
+            amount,
+            documentUID,
+            details);
+    }
+
+    function takeCoin(address indexAddress, address casinoAddress, uint amount, string documentUID, string details) public
+        onlyByUser(indexAddress)
+        onlyForActiveUser(indexAddress)
+        onlyForExistedCasino(casinoAddress)
+    {
+        require(amount > 0);
+        require(casino.balanceOf(casinoAddress) >= amount);
+
+        casino.balanceChange(casinoAddress, (-amount));
+        user.balanceChange(indexAddress, amount);
+
+        emit Exchange(
+            TransactionType.TAKE,
+            indexAddress,
+            casinoAddress,
+            user.account(indexAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+    modifier onlyForExistedCasino(address casinoAddress) {
+        require(casino.exists(casinoAddress));
+        _;
+    }
+
+    function removeArrayItem(bytes32[] storage self, uint index) private {
+        if (index >= self.length) return;
+
+        for (uint i = index; i<self.length-1; i++){
+            self[i] = self[i+1];
+        }
+
+        self.length--;
+    }
+
+    modifier onlyByAdmin() {
+        require (admin.isAdmin(msg.sender));
+        _;
+    }
+
+    modifier onlyByUser(address indexAddress) {
+        require (msg.sender == indexAddress);
+        _;
+    }
+
+    modifier onlyForActiveUser(address indexAddress) {
+        require (user.isActive(indexAddress));
+        _;
+    }
+
+    modifier onlyByUserOrAdmin(address indexAddress) {
+        if (msg.sender == indexAddress) {
+            require(user.exists(indexAddress));
+            require (user.isActive(indexAddress));
+        } else {
+            require(admin.isAdmin(msg.sender));
+        }
+        _;
+    }
+
+}

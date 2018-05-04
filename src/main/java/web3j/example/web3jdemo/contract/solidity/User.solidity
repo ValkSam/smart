@@ -1,0 +1,141 @@
+pragma solidity ^0.4.21;
+
+import "browser/Libs.sol";
+import "browser/Events.sol";
+import "browser/Admin.sol";
+
+contract User is eventRegisterAware {
+
+    using Strings for string;
+    using Arrays for bytes32[];
+
+    Admin admin;
+
+    struct Balance {
+        address addr;
+        uint amount;
+    }
+
+    struct UserBalance {
+        Balance active;
+        Balance passive;
+    }
+
+    struct DocLog {
+        uint blockNumber;
+        uint amount;
+    }
+
+    struct UserData {
+        bool isActive;
+        UserBalance balance;
+        bytes32[] docLogIndex;
+        mapping(bytes32 => DocLog) docLog;
+    }
+
+    mapping (address => UserData) users;
+    address[] usersIndex;
+
+    function User(address adminContractAddress) public {
+        admin = Admin(adminContractAddress);
+    }
+
+    function exists(address indexAddress) public view returns(bool){
+        users[indexAddress].balance.active.addr != address(0x0);
+    }
+
+    function isActive(address indexAddress) public view returns(bool){
+        return users[indexAddress].isActive;
+    }
+
+    function account(address indexAddress) public view returns(address) {
+        return users[indexAddress].balance.active.addr;
+    }
+
+    function balanceOf(address indexAddress) public view returns(uint) {
+        return users[indexAddress].balance.active.amount;
+    }
+
+    function balanceChange(address indexAddress, uint amount) public
+        //TODO
+    {
+        users[indexAddress].balance.active.amount += amount;
+    }
+
+    function passiveAccount(address indexAddress) public view returns(address) {
+        return users[indexAddress].balance.passive.addr;
+    }
+
+    function balancePassiveOf(address indexAddress) public view returns(uint) {
+        return users[indexAddress].balance.passive.amount;
+    }
+
+    function balancePassiveChange(address indexAddress, uint amount) public
+        //TODO
+    {
+        users[indexAddress].balance.passive.amount += amount;
+    }
+
+    function addDocument(address indexAddress, string documentUID, uint amount) public
+        onlyByAdmin()
+    {
+        require(bytes(documentUID).length != 0);
+        require(bytes(documentUID).length <= 32);
+        require(!documentExists(indexAddress, documentUID));
+        users[indexAddress].docLog[keccak256(documentUID)] = DocLog(block.number, amount);
+        users[indexAddress].docLogIndex.push(documentUID.stringToBytes32());
+    }
+
+    function removeDocument(address indexAddress, string documentUID) public
+        onlyByAdmin()
+    {
+        require(documentExists(indexAddress, documentUID));
+        uint idx = users[indexAddress].docLogIndex.getArrayItemIndex(documentUID);
+        assert(idx != uint(-1));
+        delete(users[indexAddress].docLog[keccak256(documentUID)]);
+        users[indexAddress].docLogIndex.removeArrayItem(idx);
+    }
+
+    function documentsUIDs(address indexAddress) public view
+        returns (bytes32[] documentUIDs)
+    {
+        return users[indexAddress].docLogIndex;
+    }
+
+    function documentExists(address indexAddress, string documentUID) public view returns(bool){
+        bytes32 documentUIDHash = keccak256(documentUID);
+        return users[indexAddress].docLog[documentUIDHash].blockNumber != 0;
+    }
+
+    function documentAmount(address indexAddress, string documentUID) public view returns(uint){
+        return users[indexAddress].docLog[keccak256(documentUID)].amount;
+    }
+
+    function register(address indexAddress, address active, address passive, string details) public
+        onlyByAdmin()
+    {
+        require(users[indexAddress].balance.active.addr == address(0x0));
+        require(indexAddress != active);
+        require(indexAddress != passive);
+        require(active != passive);
+
+        usersIndex.push(indexAddress);
+        users[indexAddress] = UserData(
+            {
+                isActive: true,
+                balance: UserBalance(Balance(active, 0), Balance(passive, 0)),
+                docLogIndex: new bytes32[](0)
+            });
+
+        emit Register(
+            TransactionType.REGISTER_USER,
+            indexAddress,
+            details);
+    }
+
+    modifier onlyByAdmin() {
+        require (admin.isAdmin(msg.sender));
+        _;
+    }
+
+}

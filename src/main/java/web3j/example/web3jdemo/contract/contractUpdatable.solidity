@@ -14,22 +14,31 @@ contract utilAware {
     
 }
 
-contract Rooter {
+contract Admin {
+    
+    address private admin;
+    uint private a;
 
-    address private rooter;
-
-    function root() public{
-        rooter = msg.sender;
+    function Admin() public{
+        admin = msg.sender;
     }
 
-    function isRooter(address rooterAddress) public view returns(bool){
-        return rooter == rooterAddress;
+    function isAdmin(address adminAddress) public view returns(bool){
+        return admin == adminAddress;
+    }
+    
+    function setA(uint v) public {
+        a = v;
+    }
+    
+    function getA() public view returns (uint){
+        return a;
     }
 
 }
 
 contract eventAware {
-
+    
     enum TransactionType {
         REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, WITHDRAW, DEPOSIT, TAKE, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST, WITHDRAW_REQUEST
     }
@@ -111,7 +120,7 @@ contract eventMintAware is eventAware {
 
 contract User is utilAware, eventRegisterAware {
 
-    Rooter rooter;
+    Admin admin;
 
     struct Balance {
         address addr;
@@ -137,45 +146,45 @@ contract User is utilAware, eventRegisterAware {
 
     mapping (address => UserData) users;
     address[] usersIndex;
-
+    
     function exists(address indexAddress) public view returns(bool){
         users[indexAddress].balance.active.addr != address(0x0);
     }
-
+    
     function isActive(address indexAddress) public view returns(bool){
         return users[indexAddress].isActive;
     }
-
+    
     function account(address indexAddress) public view returns(address) {
         return users[indexAddress].balance.active.addr;
     }
-
+    
     function balanceOf(address indexAddress) public view returns(uint) {
         return users[indexAddress].balance.active.amount;
     }
-
-    function balanceChange(address indexAddress, uint amount) public
+    
+    function balanceChange(address indexAddress, uint amount) public 
         //TODO
     {
         users[indexAddress].balance.active.amount += amount;
     }
-
+    
     function passiveAccount(address indexAddress) public view returns(address) {
         return users[indexAddress].balance.passive.addr;
     }
-
+    
     function balancePassiveOf(address indexAddress) public view returns(uint) {
         return users[indexAddress].balance.passive.amount;
     }
-
-    function balancePassiveChange(address indexAddress, uint amount) public
+    
+    function balancePassiveChange(address indexAddress, uint amount) public 
         //TODO
     {
         users[indexAddress].balance.passive.amount += amount;
     }
-
-    function addDocument(address indexAddress, string documentUID, uint amount) public
-        onlyByRooter()
+    
+    function addDocument(address indexAddress, string documentUID, uint amount) public 
+        onlyByAdmin()
     {
         require(bytes(documentUID).length != 0);
         require(bytes(documentUID).length <= 32);
@@ -183,9 +192,9 @@ contract User is utilAware, eventRegisterAware {
         users[indexAddress].docLog[keccak256(documentUID)] = DocLog(block.number, amount);
         users[indexAddress].docLogIndex.push(stringToBytes32(documentUID));
     }
-
-    function removeDocument(address indexAddress, string documentUID) public
-        onlyByRooter()
+    
+    function removeDocument(address indexAddress, string documentUID) public 
+        onlyByAdmin()
     {
         require(documentExists(indexAddress, documentUID));
         uint idx = getArrayItemIndex(users[indexAddress].docLogIndex, documentUID);
@@ -193,24 +202,24 @@ contract User is utilAware, eventRegisterAware {
         delete(users[indexAddress].docLog[keccak256(documentUID)]);
         removeArrayItem(users[indexAddress].docLogIndex, idx);
     }
-
+    
     function documentsUIDs(address indexAddress) public view
         returns (bytes32[] documentUIDs)
     {
         return users[indexAddress].docLogIndex;
     }
-
+    
     function documentExists(address indexAddress, string documentUID) public view returns(bool){
         bytes32 documentUIDHash = keccak256(documentUID);
         return users[indexAddress].docLog[documentUIDHash].blockNumber != 0;
     }
-
+    
     function documentAmount(address indexAddress, string documentUID) public view returns(uint){
         return users[indexAddress].docLog[keccak256(documentUID)].amount;
     }
 
     function register(address indexAddress, address active, address passive, string details) public
-        onlyByRooter()
+        onlyByAdmin()
     {
         require(users[indexAddress].balance.active.addr == address(0x0));
         require(indexAddress != active);
@@ -253,28 +262,32 @@ contract User is utilAware, eventRegisterAware {
 
         self.length--;
     }
-
-    modifier onlyByRooter() {
-        require (rooter.isRooter(msg.sender));
+    
+    modifier onlyByAdmin() {
+        require (admin.isAdmin(msg.sender));
         _;
     }
 
 }
 
 contract Casino is eventRegisterAware {
-
-    Rooter rooter;
+    
+    Admin admin;
 
     struct CasinoData {
         bool isActive;
         uint amount;
     }
-
+    
     mapping(address => CasinoData) casinos;
     address[] casinosIndex;
-
+    
+    function Casino() public {
+        admin = Admin(0x0a94a8dcc1be72ad6313270b930d42304dce851d);
+    }
+    
     function register(address casinoAddress, string details) public
-        onlyByRooter()
+        onlyByAdmin()
     {
         require(getArrayItemIndex(casinosIndex, casinoAddress) == uint(-1));
 
@@ -290,19 +303,27 @@ contract Casino is eventRegisterAware {
             casinoAddress,
             details);
     }
-
+    
+    function setA(uint v) public {
+        admin.setA(v);
+    }
+    
+    function getA() public view returns (uint){
+        return admin.getA();
+    }
+    
     function exists(address casinoAddress) public view returns(bool) {
         return casinos[casinoAddress].isActive;
     }
-
+    
     function balanceOf(address casinoAddress) public view returns(uint) {
         return casinos[casinoAddress].amount;
     }
-
+    
     function balanceChange(address casinoAddress, uint amount) public {
         casinos[casinoAddress].amount += amount;
     }
-
+    
     function getArrayItemIndex(address[] storage self, address value) private view returns (uint index){
 
         bytes32 valueToSearch = keccak256(value);
@@ -317,42 +338,42 @@ contract Casino is eventRegisterAware {
         return uint(-1);
     }
 
-    modifier onlyByRooter() {
-        require (rooter.isRooter(msg.sender));
+    modifier onlyByAdmin() {
+        require (admin.isAdmin(msg.sender));
         _;
     }
 
 }
 
 contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventRegisterDocumentAware {
-
-    Rooter rooter;
-
+    
+    Admin admin;
+    
     Casino casino;
-
+    
     User user;
-
+    
 
     function DLT_5() public {
 
     }
-
+    
     function registerCasino(address casinoAddress, string details) public {
         casino.register(casinoAddress, details);
     }
-
+    
     function registerUser(address indexAddress, address active, address passive, string details) public {
         user.register(indexAddress, active, passive, details);
     }
-
+    
     function registerEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
-        onlyByRooter()
+        onlyByAdmin()
         onlyForActiveUser(indexAddress)
     {
         require(amount > 0);
 
         user.addDocument(indexAddress, documentUID, amount);
-
+        
         emit RegisterDocument(
             TransactionType.ENROLL_REQUEST,
             indexAddress,
@@ -362,7 +383,7 @@ contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventR
     }
 
     function cancelEnrollRequestDocument(address indexAddress, uint amount, string documentUID, string details) public
-        onlyByUserOrRooter(indexAddress)
+        onlyByUserOrAdmin(indexAddress)
     {
 
         user.removeDocument(indexAddress, documentUID);
@@ -492,7 +513,7 @@ contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventR
             documentUID,
             details);
     }
-
+    
     modifier onlyForExistedCasino(address casinoAddress) {
         require(casino.exists(casinoAddress));
         _;
@@ -507,28 +528,28 @@ contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventR
 
         self.length--;
     }
-
-    modifier onlyByRooter() {
-        require (rooter.isRooter(msg.sender));
+    
+    modifier onlyByAdmin() {
+        require (admin.isAdmin(msg.sender));
         _;
     }
-
+    
     modifier onlyByUser(address indexAddress) {
         require (msg.sender == indexAddress);
         _;
     }
-
+    
     modifier onlyForActiveUser(address indexAddress) {
         require (user.isActive(indexAddress));
         _;
     }
 
-    modifier onlyByUserOrRooter(address indexAddress) {
+    modifier onlyByUserOrAdmin(address indexAddress) {
         if (msg.sender == indexAddress) {
             require(user.exists(indexAddress));
             require (user.isActive(indexAddress));
         } else {
-            require(rooter.isRooter(msg.sender));
+            require(admin.isAdmin(msg.sender));
         }
         _;
     }
