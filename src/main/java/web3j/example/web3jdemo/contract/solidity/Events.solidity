@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 contract eventAware {
 
@@ -12,14 +12,16 @@ contract eventSetOwnershipAware is eventAware {
     event SetOwnership(
         TransactionType txType,
         address currentOwner,
-        address newOwner);
+        address newOwner,
+        string details);
 }
 
 contract eventSetAddAdminAware is eventAware {
     event AddAdmin(
         TransactionType txType,
         address adminAddress,
-        uint count
+        uint count,
+        string details
     );
 }
 

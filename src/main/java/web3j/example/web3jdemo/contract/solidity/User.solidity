@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "browser/Libs.sol";
 import "browser/Events.sol";
@@ -36,12 +36,12 @@ contract User is eventRegisterAware {
     mapping (address => UserData) users;
     address[] usersIndex;
 
-    function User(address adminContractAddress) public {
+    constructor (address adminContractAddress) public {
         admin = Admin(adminContractAddress);
     }
 
     function exists(address indexAddress) public view returns(bool){
-        users[indexAddress].balance.active.addr != address(0x0);
+        return users[indexAddress].balance.active.addr != address(0x0);
     }
 
     function isActive(address indexAddress) public view returns(bool){
@@ -57,7 +57,7 @@ contract User is eventRegisterAware {
     }
 
     function balanceChange(address indexAddress, uint amount) public
-        //TODO
+        onlyByAdmin()
     {
         users[indexAddress].balance.active.amount += amount;
     }
@@ -71,7 +71,7 @@ contract User is eventRegisterAware {
     }
 
     function balancePassiveChange(address indexAddress, uint amount) public
-        //TODO
+        onlyByAdmin()
     {
         users[indexAddress].balance.passive.amount += amount;
     }

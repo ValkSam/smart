@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 library Strings {
 
@@ -10,6 +10,8 @@ library Strings {
         assembly {
             result := mload(add(self, 32))
         }
+
+        return result;
     }
 
 }
@@ -18,7 +20,7 @@ library Arrays {
 
     using Strings for string;
 
-    function getArrayItemIndex(address[] storage self, address value) public view returns (uint index){
+    function getArrayItemIndex(address[] storage self, address value) public view returns (uint){
 
         bytes32 valueToSearch = keccak256(value);
 
@@ -32,7 +34,7 @@ library Arrays {
         return uint(-1);
     }
 
-    function getArrayItemIndex(bytes32[] storage self, string value) public view returns (uint index){
+    function getArrayItemIndex(bytes32[] storage self, string value) public view returns (uint){
         bytes32 valueToSearch = value.stringToBytes32();
 
         for (uint i = 0; i<self.length; i++){

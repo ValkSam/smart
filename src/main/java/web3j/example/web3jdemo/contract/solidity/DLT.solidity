@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "browser/Libs.sol";
 import "browser/Events.sol";
@@ -15,16 +15,20 @@ contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventR
     User user;
 
 
-    function DLT_5(address adminContractAddress,
+    constructor (address adminContractAddress,
         address casinoContractAddress,
         address userContractAddress) public {
         admin = Admin(adminContractAddress);
-        casino = Casino(casinoContractAddress);
+        casino = new Casino(casinoContractAddress);
         user = User(userContractAddress);
     }
 
     function registerCasino(address casinoAddress, string details) public {
         casino.register(casinoAddress, details);
+    }
+
+    function registerAdmin(address adminAddress, string details) public {
+        admin.register(adminAddress, details);
     }
 
     function registerUser(address indexAddress, address active, address passive, string details) public {
@@ -182,16 +186,6 @@ contract DLT_5 is eventTransferAware, eventExchangeAware, eventMintAware, eventR
     modifier onlyForExistedCasino(address casinoAddress) {
         require(casino.exists(casinoAddress));
         _;
-    }
-
-    function removeArrayItem(bytes32[] storage self, uint index) private {
-        if (index >= self.length) return;
-
-        for (uint i = index; i<self.length-1; i++){
-            self[i] = self[i+1];
-        }
-
-        self.length--;
     }
 
     modifier onlyByAdmin() {

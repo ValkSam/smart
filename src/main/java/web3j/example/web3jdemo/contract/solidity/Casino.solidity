@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.23;
 
 import "browser/Libs.sol";
 import "browser/Events.sol";
@@ -18,7 +18,7 @@ contract Casino is eventRegisterAware {
     mapping(address => CasinoData) casinos;
     address[] casinosIndex;
 
-    function Casino(address adminContractAddress) public {
+    constructor (address adminContractAddress) public {
         admin = Admin(adminContractAddress);
     }
 
@@ -38,14 +38,6 @@ contract Casino is eventRegisterAware {
             TransactionType.REGISTER_CASINO,
             casinoAddress,
             details);
-    }
-
-    function setA(uint v) public {
-        admin.setA(v);
-    }
-
-    function getA() public view returns (uint){
-        return admin.getA();
     }
 
     function exists(address casinoAddress) public view returns(bool) {
