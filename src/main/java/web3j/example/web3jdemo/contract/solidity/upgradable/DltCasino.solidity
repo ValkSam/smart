@@ -1,0 +1,80 @@
+pragma solidity ^0.4.23;
+
+import "browser/DltStorage.sol";
+import "browser/Libs.sol";
+import "browser/Events.sol";
+import "browser/Admin.sol";
+
+contract Casino is eventRegisterAware {
+
+    string ROOT_KEY = 'casino.';
+
+    Storage private _storage;
+
+    constructor (address storageContractAddress) public {
+        _storage = Storage(storageContractAddress);
+        require(msg.sender == _storage.owner());
+    }
+
+    function isLatestVersion() external view returns (bool) {
+        return _storage.getAddress(keccak256(ROOT_KEY, 'contract')) == address(this);
+    }
+
+    function register(address casinoAddress, string details) public
+        onlyByOwner
+    {
+        require(!exists(casinoAddress));
+        _storage.setBool(keccak256(ROOT_KEY, casinoAddress), true);
+        _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), casinoAddress);
+
+        _storage.setUint(keccak256(ROOT_KEY, casinoAddress, '.balance'), 0);
+
+        emit Register(
+            TransactionType.REGISTER_CASINO,
+            adminAddress,
+            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            details
+        );
+    }
+
+    function isCasino(address _address) external view returns(bool)
+        onlyByAdmin
+    {
+        return exists(_address);
+    }
+
+    function balanceOf(address casinoAddress) external view returns(uint)
+        onlyByAdmin
+    {
+        require(exists(casinoAddress));
+        return _storage.getUint(keccak256(ROOT_KEY, casinoAddress, '.balance'));
+    }
+
+    function balanceChange(address casinoAddress, uint amount) external
+        onlyByAdmin
+    {
+        require(exists(casinoAddress));
+        bytes32 key = keccak256(ROOT_KEY, casinoAddress, '.balance');
+        uint currentBalance = _storage.getUint(key));
+        uint newBalance = currentBalance + amount;
+        require(newBalance >= 0);
+        _storage.setUint(key, newBalance);
+    }
+
+    function exists(address _address) private view returns(bool){
+        return _storage.getBool(keccak256(ROOT_KEY, _address));
+    }
+
+    modifier onlyByOwner {
+        require(msg.sender == _storage.owner());
+        _;
+    }
+
+    modifier onlyByAdmin() {
+        address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+        Admin admin = Admin(adminAddress);
+        require (admin.isAdmin(msg.sender));
+        _;
+    }
+
+}

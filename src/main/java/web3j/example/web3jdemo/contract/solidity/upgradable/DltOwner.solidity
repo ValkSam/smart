@@ -1,0 +1,48 @@
+pragma solidity ^0.4.23;
+
+import "browser/Events.sol";
+
+contract Owner is eventSetOwnershipAware {
+    address public owner;
+    address private newOwner;
+    string private details;
+
+    constructor () public {
+        owner = msg.sender;
+        emit SetOwnership(
+            TransactionType.SET_OWNER,
+            address(0x0),
+            owner,
+            "init");
+    }
+
+    function setOwnership(address newOwnerAddress, string _details) public
+        onlyByOwner
+    {
+        newOwner = newOwnerAddress;
+        details = _details;
+    }
+
+    function acceptOwnership() public
+        onlyByNewOwner
+    {
+        owner = newOwner;
+        newOwner = address(0x0);
+        emit SetOwnership(
+            TransactionType.SET_OWNER,
+            owner,
+            newOwner,
+            details);
+    }
+
+    modifier onlyByOwner {
+        require(msg.sender == owner);
+        _;
+    }
+
+    modifier onlyByNewOwner {
+        require(msg.sender == newOwner);
+        _;
+    }
+
+}

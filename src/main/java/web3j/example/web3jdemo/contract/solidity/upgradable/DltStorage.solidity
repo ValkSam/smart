@@ -1,0 +1,163 @@
+pragma solidity 0.4.23;
+
+import "browser/Libs.sol";
+import "browser/DltOwner.sol";
+
+contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
+
+    using Arrays for address[];
+    using Arrays for bytes32[];
+
+    string private PERMITTED_CONTRACT_VERSION_ROOT_KEY = 'contract.address';
+
+    mapping(bytes32 => uint256)    private uIntStorage;
+    mapping(bytes32 => string)     private stringStorage;
+    mapping(bytes32 => address)    private addressStorage;
+    mapping(bytes32 => bytes)      private bytesStorage;
+    mapping(bytes32 => bool)       private boolStorage;
+    mapping(bytes32 => int256)     private intStorage;
+
+    mapping(bytes32 => address[])  private addressArrayStorage;
+    mapping(bytes32 => bytes32[])  private bytes32ArrayStorage;
+
+    constructor() public {
+        emit RegisterContract(
+            ContractType.STORAGE,
+            address(0x0),
+            address(this));
+    }
+
+
+    /*Contract registerer*/
+
+    function registerPermittedContract(ContractType contractType, address contractAddress) external
+        onlyByOwner
+    {
+        require(contractType != ContractType.STORAGE);
+        address previousReagisteredContractAddress = addressStorage[keccak256(PERMITTED_CONTRACT_VERSION_ROOT_KEY, contractType)];
+        delete (addressStorage[keccak256(PERMITTED_CONTRACT_VERSION_ROOT_KEY, previousReagisteredContractAddress)]);
+        addressStorage[keccak256(PERMITTED_CONTRACT_VERSION_ROOT_KEY, contractType)] = contractAddress;
+        addressStorage[keccak256(PERMITTED_CONTRACT_VERSION_ROOT_KEY, contractAddress)] = contractAddress;
+
+        emit RegisterContract(
+            contractType,
+            previousReagisteredContractAddress,
+            contractAddress);
+    }
+
+    function getPermittedContractAddress(ContractType contractType) external view returns (address) {
+        return addressStorage[keccak256(PERMITTED_CONTRACT_VERSION_ROOT_KEY, contractType)];
+    }
+
+    /*Getter*/
+
+    function getAddress(bytes32 key) external view returns (address) {
+        return addressStorage[key];
+    }
+
+    function getUint(bytes32 key) external view returns (uint) {
+        return uIntStorage[key];
+    }
+
+    function getString(bytes32 key) external view returns (string) {
+        return stringStorage[key];
+    }
+
+    function getBytes(bytes32 key) external view returns (bytes) {
+        return bytesStorage[key];
+    }
+
+    function getBool(bytes32 _key) external view returns (bool) {
+        return boolStorage[_key];
+    }
+
+    function getInt(bytes32 key) external view returns (int) {
+        return intStorage[key];
+    }
+
+    function getAddressArray(bytes32 key) external view returns (address[]) {
+        return addressArrayStorage[key];
+    }
+
+    function getBytes32Array(bytes32 key) external view returns (bytes32[]) {
+        return bytes32ArrayStorage[key];
+    }
+
+    /*Setter*/
+
+    function setAddress(bytes32 key, address value) onlyLatestContractVersion external {
+        addressStorage[key] = value;
+    }
+
+    function setUint(bytes32 key, uint value) onlyLatestContractVersion external {
+        uIntStorage[key] = value;
+    }
+
+    function setString(bytes32 key, string value) onlyLatestContractVersion external {
+        stringStorage[key] = value;
+    }
+
+    function setBytes(bytes32 key, bytes value) onlyLatestContractVersion external {
+        bytesStorage[key] = value;
+    }
+
+    function setBool(bytes32 key, bool value) onlyLatestContractVersion external {
+        boolStorage[key] = value;
+    }
+
+    function setInt(bytes32 key, int value) onlyLatestContractVersion external {
+        intStorage[key] = value;
+    }
+
+    function pushAddressArray(bytes32 key, address value) onlyLatestContractVersion external {
+        addressArrayStorage[key].push(value);
+    }
+
+    function pushBytes32Array(bytes32 key, bytes32 value) onlyLatestContractVersion external {
+        bytes32ArrayStorage[key].push(value);
+    }
+
+    /*Deleter*/
+
+    function deleteAddress(bytes32 key) onlyLatestContractVersion external {
+        delete addressStorage[key];
+    }
+
+    function deleteUint(bytes32 key) onlyLatestContractVersion external {
+        delete uIntStorage[key];
+    }
+
+    function deleteString(bytes32 key) onlyLatestContractVersion external {
+        delete stringStorage[key];
+    }
+
+    function deleteBytes(bytes32 key) onlyLatestContractVersion external {
+        delete bytesStorage[key];
+    }
+
+    function deleteBool(bytes32 key) onlyLatestContractVersion external {
+        delete boolStorage[key];
+    }
+
+    function deleteInt(bytes32 key) onlyLatestContractVersion external {
+        delete intStorage[key];
+    }
+
+    function removeAddressArray(bytes32 key, address value) onlyLatestContractVersion external {
+        uint idx = addressArrayStorage[key].getArrayItemIndex(value);
+        addressArrayStorage[key].removeArrayItem(idx);
+    }
+
+    function removeBytes32Array(bytes32 key, bytes32 value) onlyLatestContractVersion external {
+        uint idx = bytes32ArrayStorage[key].getArrayItemIndex(value);
+        bytes32ArrayStorage[key].removeArrayItem(idx);
+    }
+
+    /*Modifier*/
+
+    modifier onlyLatestContractVersion() {
+        require(addressStorage[keccak256(PERMITTED_CONTRACT_VERSION_ROOT_KEY, msg.sender)] != address(0x0));
+        _;
+    }
+
+}

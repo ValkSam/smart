@@ -1,0 +1,157 @@
+pragma solidity ^0.4.23;
+
+import "browser/DltStorage.sol";
+import "browser/Libs.sol";
+import "browser/Events.sol";
+import "browser/Admin.sol";
+
+contract User is eventRegisterAware {
+
+    string ROOT_KEY = 'user.';
+
+    Storage private _storage;
+
+    constructor (address storageContractAddress) public {
+        _storage = Storage(storageContractAddress);
+        require(msg.sender == _storage.owner());
+    }
+
+    function isLatestVersion() public view returns (bool) {
+        return _storage.getAddress(keccak256(ROOT_KEY, 'contract')) == address(this);
+    }
+
+    function register(address userAddress, address userReservedAddress, string details) public
+        onlyByAdmin
+    {
+        require(!exists(userAddress));
+        _storage.setBool(keccak256(ROOT_KEY, userAddress), true);
+        _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), userAddress);
+
+        _storage.setBool(keccak256(ROOT_KEY, userAddress, '.active'), true);
+        _storage.setUint(keccak256(ROOT_KEY, userAddress, '.balance'), 0);
+        _storage.setAddress(keccak256(ROOT_KEY, userAddress, '.address.reserved'), userReservedAddress);
+        _storage.setUint(keccak256(ROOT_KEY, userAddress, '.balance.reserved'), 0);
+
+        emit Register(
+            TransactionType.REGISTER_USER,
+            userAddress,
+            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            details
+        );
+    }
+
+    function isUser(address _address) external view
+        onlyByAdmin
+        returns(bool)
+    {
+        return exists(_address);
+    }
+
+    function isActive(address userAddress) external view returns(bool){
+        return active(userAddress);
+    }
+
+    function balanceOf(address userAddress) external view
+        onlyByUserOrAdmin
+        returns(uint)
+    {
+        require(exists(userAddress));
+        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.balance'));
+    }
+
+    function balanceChange(address userAddress, uint amount) external
+        onlyByUserOrAdmin
+    {
+        require(exists(userAddress));
+        bytes32 key = keccak256(ROOT_KEY, userAddress, '.balance');
+        balanceChange (key, amount);
+    }
+
+    function balanceReservedOf(address userAddress) external view
+        onlyByUserOrAdmin
+        returns(uint)
+    {
+        require(exists(userAddress));
+        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.balance.reserved'));
+    }
+
+    function balanceReservedChange(address userAddress, uint amount) external
+        onlyByAdmin
+    {
+        require(exists(userAddress));
+        bytes32 key = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
+        balanceChange(key, amount);
+    }
+
+    function addDocument(address userAddress, string documentUID, uint amount) external
+        onlyByAdmin()
+    {
+        require(bytes(documentUID).length != 0);
+        require(bytes(documentUID).length <= 32);
+        require(amount != 0);
+        require(!documentExists(userAddress, documentUID));
+        _storage.addUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID), amount);
+        _storage.pushBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
+    }
+
+    function removeDocument(address userAddress, string documentUID) external
+        onlyByAdmin()
+    {
+        require(documentExists(userAddress, documentUID));
+        uint idx = _storage.bytes32ArrayStorage[keccak256(ROOT_KEY, userAddress, '.document.index')].getArrayItemIndex(documentUID.stringToBytes32());
+        assert(idx != uint(-1));
+        _storage.deleteUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
+        _storage.removeBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
+    }
+
+    function documentAmount(address userAddress, string documentUID) external view returns(uint){
+        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
+    }
+
+    function documentsUIDs(address userAddress) public view
+        returns (bytes32[] documentUIDs)
+    {
+        return _storage.getBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'));
+    }
+
+    function documentExists(address indexAddress, string documentUID) public view returns(bool){
+        bytes32 documentUIDHash = keccak256(documentUID);
+        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID)) != 0;
+    }
+
+    function balanceChange(bytes32 key, uint amount) private {
+        uint currentBalance = _storage.getUint(key);
+        uint newBalance = currentBalance + amount;
+        require(newBalance >= 0);
+        _storage.setUint(key, newBalance);
+    }
+
+    function exists(address _address) private view returns(bool){
+        return _storage.getBool(keccak256(ROOT_KEY, _address));
+    }
+
+    function active(address userAddress) private view returns(bool){
+        return _storage.getBool(keccak256(ROOT_KEY, 'active.', userAddress));
+    }
+
+    function documentExists(address userAddress, string documentUID) public view returns(bool) {
+        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID)) != 0;
+    }
+
+    modifier onlyByAdmin() {
+        address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+        Admin admin = Admin(adminAddress);
+        require (admin.isAdmin(msg.sender));
+        _;
+    }
+
+    modifier onlyByUserOrAdmin(address userAddress) {
+        if (userAddress != msg.sender) {
+            address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+            Admin admin = Admin(adminAddress);
+            require (admin.isAdmin(msg.sender));
+        }
+        _;
+    }
+
+}

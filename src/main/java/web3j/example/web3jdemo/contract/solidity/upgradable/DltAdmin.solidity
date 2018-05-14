@@ -1,0 +1,52 @@
+pragma solidity ^0.4.23;
+
+import "browser/DltStorage.sol";
+import "browser/Events.sol";
+
+contract Admin is eventRegisterAware {
+
+    string ROOT_KEY = 'admin.';
+
+    Storage private _storage;
+
+    constructor (address storageContractAddress) public {
+        _storage = Storage(storageContractAddress);
+        require(msg.sender == _storage.owner());
+    }
+
+    function isLatestVersion() external view returns (bool) {
+        return _storage.getAddress(keccak256(ROOT_KEY, 'contract')) == address(this);
+    }
+
+    function register(address adminAddress, string details) public
+        onlyByOwner
+    {
+        require(!exists(adminAddress));
+        _storage.setBool(keccak256(ROOT_KEY, adminAddress), true);
+        _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), adminAddress);
+
+        emit Register(
+            TransactionType.REGISTER_ADMIN,
+            adminAddress,
+            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            details
+        );
+    }
+
+    function isAdmin(address _address) external view
+        onlyByOwner
+        returns(bool)
+    {
+        return _storage.getBool(keccak256(ROOT_KEY, _address));
+    }
+
+    function exists(address _address) private view returns(bool){
+        return _storage.getBool(keccak256(ROOT_KEY, _address));
+    }
+
+    modifier onlyByOwner {
+        require(msg.sender == _storage.owner());
+        _;
+    }
+
+}
