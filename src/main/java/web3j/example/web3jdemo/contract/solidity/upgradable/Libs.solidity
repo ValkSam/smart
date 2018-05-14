@@ -1,0 +1,69 @@
+pragma solidity ^0.4.23;
+
+library Strings {
+
+    function stringToBytes32(string self) public pure returns (bytes32 result) {
+        if (bytes(self).length == 0) {
+            return "";
+        }
+
+        assembly {
+            result := mload(add(self, 32))
+        }
+
+        return result;
+    }
+
+}
+
+library Arrays {
+
+    using Strings for string;
+
+    function getArrayItemIndex(address[] memory self, address value) public pure returns (uint){
+
+        bytes32 valueToSearch = keccak256(value);
+
+        for (uint i = 0; i<self.length; i++){
+            if (keccak256(self[i]) == valueToSearch){
+                return i;
+                break;
+            }
+        }
+
+        return uint(-1);
+    }
+
+    function getArrayItemIndex(bytes32[] memory self, bytes32 value) public pure returns (uint){
+
+        for (uint i = 0; i<self.length; i++){
+            if (self[i] == value){
+                return i;
+                break;
+            }
+        }
+
+        return uint(-1);
+    }
+
+    function removeArrayItem(address[] storage self, uint index) public {
+        if (index >= self.length) return;
+
+        for (uint i = index; i<self.length-1; i++){
+            self[i] = self[i+1];
+        }
+
+        self.length--;
+    }
+
+    function removeArrayItem(bytes32[] storage self, uint index) public {
+        if (index >= self.length) return;
+
+        for (uint i = index; i<self.length-1; i++){
+            self[i] = self[i+1];
+        }
+
+        self.length--;
+    }
+
+}

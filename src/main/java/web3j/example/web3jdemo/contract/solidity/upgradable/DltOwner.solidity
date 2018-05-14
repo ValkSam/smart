@@ -16,14 +16,14 @@ contract Owner is eventSetOwnershipAware {
             "init");
     }
 
-    function setOwnership(address newOwnerAddress, string _details) public
+    function setOwnership(address newOwnerAddress, string _details) external
         onlyByOwner
     {
         newOwner = newOwnerAddress;
         details = _details;
     }
 
-    function acceptOwnership() public
+    function acceptOwnership() external
         onlyByNewOwner
     {
         owner = newOwner;
@@ -34,6 +34,8 @@ contract Owner is eventSetOwnershipAware {
             newOwner,
             details);
     }
+
+    /*Modifier*/
 
     modifier onlyByOwner {
         require(msg.sender == owner);
