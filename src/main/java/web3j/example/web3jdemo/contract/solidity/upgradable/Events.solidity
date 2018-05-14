@@ -1,6 +1,6 @@
 pragma solidity ^0.4.23;
 
-contract eventAware {
+contract typeAware {
 
     enum TransactionType {
         SET_OWNER, REGISTER_ADMIN, REGISTER_CASINO, REGISTER_USER, TRANSFER, ENROLL, WITHDRAW, DEPOSIT, TAKE, ENROLL_REQUEST, CANCEL_ENROLL_REQUEST, WITHDRAW_REQUEST
@@ -12,14 +12,14 @@ contract eventAware {
 
 }
 
-contract eventRegisterContractAware is eventAware {
+contract eventRegisterContractAware is typeAware {
     event RegisterContract(
         ContractType contractType,
         address currentAddress,
         address newAddress);
 }
 
-contract eventSetOwnershipAware is eventAware {
+contract eventSetOwnershipAware is typeAware {
     event SetOwnership(
         TransactionType txType,
         address currentOwner,
@@ -27,7 +27,7 @@ contract eventSetOwnershipAware is eventAware {
         string details);
 }
 
-contract eventRegisterAware is eventAware {
+contract eventRegisterAware is typeAware {
 
     event Register(
         TransactionType txType,
@@ -38,7 +38,7 @@ contract eventRegisterAware is eventAware {
 
 }
 
-contract eventRegisterDocumentAware is eventAware {
+contract eventRegisterDocumentAware is typeAware {
 
     event RegisterDocument(
         TransactionType txType,
@@ -50,7 +50,7 @@ contract eventRegisterDocumentAware is eventAware {
 
 }
 
-contract eventTransferAware is eventAware {
+contract eventTransferAware is typeAware {
 
     event Transfer(
         TransactionType txType,
@@ -64,7 +64,7 @@ contract eventTransferAware is eventAware {
 
 }
 
-contract eventExchangeAware is eventAware {
+contract eventExchangeAware is typeAware {
 
     event Exchange(
         TransactionType txType,
@@ -78,7 +78,7 @@ contract eventExchangeAware is eventAware {
 
 }
 
-contract eventMintAware is eventAware {
+contract eventMintAware is typeAware {
 
     event Mint(
         TransactionType txType,
