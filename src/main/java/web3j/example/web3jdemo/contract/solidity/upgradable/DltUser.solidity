@@ -2,6 +2,7 @@ pragma solidity ^0.4.23;
 
 import "browser/DltStorage.sol";
 import "browser/DltAdmin.sol";
+import "browser/DltToken.sol";
 import "browser/Libs.sol";
 import "browser/Events.sol";
 
@@ -10,7 +11,7 @@ contract User is typeAware {
     using Arrays for bytes32[];
     using Strings for string;
 
-    string ROOT_KEY = 'user.';
+    string private ROOT_KEY = 'user.';
 
     Storage private _storage;
 
@@ -19,18 +20,28 @@ contract User is typeAware {
         require(msg.sender == _storage.owner());
     }
 
-    /*owner permissions*/
+    /*public*/
 
     function isLatestVersion() external view
-        onlyByOwner
         returns (bool) {
-        return _storage.getAddress(keccak256(ROOT_KEY, 'contract')) == address(this);
+        return _storage.isPermittedContractAddress(address(this));
     }
 
-    /*admin permissions*/
+    function isUser(address _address) external view
+        returns(bool)
+    {
+        return exists(_address);
+    }
+
+    function isActive(address userAddress) external view
+        returns(bool){
+        return active(userAddress);
+    }
+
+    /*token permissions*/
 
     function register(address userAddress, address userReservedAddress) external
-        onlyByAdmin
+        onlyByLatestTokenContractVersion
         returns (uint)
     {
         require(!exists(userAddress));
@@ -45,21 +56,8 @@ contract User is typeAware {
         return _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length;
     }
 
-    function isUser(address _address) external view
-        onlyByAdmin
-        returns(bool)
-    {
-        return exists(_address);
-    }
-
-    function isActive(address userAddress) external view
-        onlyByAdmin
-        returns(bool){
-        return active(userAddress);
-    }
-
     function balanceChange(address userAddress, uint amount) external
-        onlyByAdmin
+        onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
         require(exists(userAddress));
@@ -68,7 +66,7 @@ contract User is typeAware {
     }
 
     function balanceReservedChange(address userAddress, uint amount) external
-        onlyByAdmin
+        onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
         require(exists(userAddress));
@@ -77,7 +75,7 @@ contract User is typeAware {
     }
 
     function addDocument(address userAddress, string documentUID, uint amount) external
-        onlyByAdmin()
+        onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
         require(bytes(documentUID).length != 0);
@@ -89,7 +87,7 @@ contract User is typeAware {
     }
 
     function removeDocument(address userAddress, string documentUID) external
-        onlyByAdmin()
+        onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
         require(documentExists(userAddress, documentUID));
@@ -99,10 +97,7 @@ contract User is typeAware {
         _storage.removeBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
     }
 
-    /*admin & user permissions*/
-
     function balanceOf(address userAddress) external view
-        onlyByUserOrAdmin(userAddress)
         returns(uint)
     {
         require(exists(userAddress));
@@ -110,7 +105,7 @@ contract User is typeAware {
     }
 
     function balanceReservedOf(address userAddress) external view
-        onlyByUserOrAdmin(userAddress)
+        onlyByLatestTokenContractVersion
         returns(uint)
     {
         require(exists(userAddress));
@@ -118,13 +113,13 @@ contract User is typeAware {
     }
 
     function documentAmount(address userAddress, string documentUID) external view
-        onlyByUserOrAdmin(userAddress)
+        onlyByLatestTokenContractVersion
         returns(uint){
         return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
     }
 
     function documentsUIDs(address userAddress) external view
-        onlyByUserOrAdmin(userAddress)
+        onlyByLatestTokenContractVersion
         returns (bytes32[] documentUIDs)
     {
         return _storage.getBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'));
@@ -154,29 +149,13 @@ contract User is typeAware {
 
     /*Modifier*/
 
-    modifier onlyByOwner {
-        require(msg.sender == _storage.owner());
-        _;
-    }
-
-    modifier onlyByAdmin() {
-        address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
-        Admin admin = Admin(adminAddress);
-        require (admin.isAdmin(msg.sender));
-        _;
-    }
-
-    modifier onlyByUserOrAdmin(address userAddress) {
-        if (userAddress != msg.sender) {
-            address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
-            Admin admin = Admin(adminAddress);
-            require (admin.isAdmin(msg.sender));
-        }
-        _;
-    }
-
     modifier onlyForActiveUser(address indexAddress) {
         require (active(indexAddress));
+        _;
+    }
+
+    modifier onlyByLatestTokenContractVersion() {
+        require(_storage.getPermittedContractAddress(ContractType.TOKEN) == msg.sender);
         _;
     }
 

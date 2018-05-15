@@ -7,7 +7,7 @@ contract typeAware {
     }
 
     enum ContractType {
-        STORAGE, ADMIN, CASINO, USER
+        STORAGE, ADMIN, CASINO, USER, TOKEN
     }
 
 }
@@ -53,10 +53,10 @@ contract eventRegisterDocumentAware is typeAware {
 contract eventTransferAware is typeAware {
 
     event Transfer(
-        TransactionType txType,
-        address sender,
-        address receiver,
-        uint amount,
+        address indexed from,
+        address indexed to,
+        TransactionType indexed txType,
+        uint tokens,
         string details
         );
 

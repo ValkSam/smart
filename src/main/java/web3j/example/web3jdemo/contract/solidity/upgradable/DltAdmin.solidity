@@ -3,9 +3,9 @@ pragma solidity ^0.4.23;
 import "browser/DltStorage.sol";
 import "browser/Events.sol";
 
-contract Admin {
+contract Admin is typeAware {
 
-    string ROOT_KEY = 'admin.';
+    string private ROOT_KEY = 'admin.';
 
     Storage private _storage;
 
@@ -14,29 +14,29 @@ contract Admin {
         require(msg.sender == _storage.owner());
     }
 
-    /*owner permissions*/
+    /*public*/
 
     function isLatestVersion() external view
-        onlyByOwner
         returns (bool) {
-        return _storage.getAddress(keccak256(ROOT_KEY, 'contract')) == address(this);
+        return _storage.isPermittedContractAddress(address(this));
     }
 
+    function isAdmin(address _address) external view
+        returns(bool)
+    {
+        return _storage.getBool(keccak256(ROOT_KEY, _address));
+    }
+
+    /*token permissions*/
+
     function register(address adminAddress) external
-        onlyByOwner
+        onlyByLatestTokenContractVersion
         returns (uint)
     {
         require(!exists(adminAddress));
         _storage.setBool(keccak256(ROOT_KEY, adminAddress), true);
         _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), adminAddress);
         return _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length;
-    }
-
-    function isAdmin(address _address) external view
-        onlyByOwner
-        returns(bool)
-    {
-        return _storage.getBool(keccak256(ROOT_KEY, _address));
     }
 
     /*private section*/
@@ -47,8 +47,8 @@ contract Admin {
 
     /*Modifier*/
 
-    modifier onlyByOwner {
-        require(msg.sender == _storage.owner());
+    modifier onlyByLatestTokenContractVersion() {
+        require(_storage.getPermittedContractAddress(ContractType.TOKEN) == msg.sender);
         _;
     }
 

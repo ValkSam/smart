@@ -1,0 +1,321 @@
+pragma solidity ^0.4.23;
+
+import "browser/Libs.sol";
+import "browser/Events.sol";
+import "browser/DltAdmin.sol";
+import "browser/DltCasino.sol";
+import "browser/DltUser.sol";
+
+contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, eventMintAware, eventRegisterDocumentAware {
+
+    string private ROOT_KEY = 'token.';
+    bytes32 NAME_KEY_HASH = keccak256(ROOT_KEY, 'ERC20.name');
+    bytes32 SYMBOL_KEY_HASH = keccak256(ROOT_KEY, 'ERC20.symbol');
+    bytes32 DECIMALS_KEY_HASH = keccak256(ROOT_KEY, 'ERC20.decimals');
+    bytes32 MAX_SUPPLY_KEY_HASH = keccak256(ROOT_KEY, 'ERC20.maxSupply');
+    bytes32 TOTAL_SYPPLY_KEY_HASH = keccak256(ROOT_KEY, 'ERC20.totalSupply');
+
+    Storage private _storage;
+
+    constructor (address adminContractAddress, string tokenName, string tokenSymbol, uint maxSupply, uint totalSupply, uint decimals) public {
+        _storage = Storage(storageContractAddress);
+        require(msg.sender == _storage.owner());
+        require (_storage.getPermittedContractAddress(ContractType.TOKEN) == address(0x0));
+
+        _storage.setString(NAME_KEY_HASH, tokenName);
+        _storage.setString(SYMBOL_KEY_HASH, tokenSymbol);
+        _storage.setUint(DECIMALS_KEY_HASH, decimals);
+        _storage.setUint(MAX_SUPPLY_KEY_HASH, maxSupply);
+        _storage.setUint(TOTAL_SYPPLY_KEY_HASH, 0);
+    }
+
+    constructor (address adminContractAddress) public {
+        _storage = Storage(storageContractAddress);
+        require(msg.sender == _storage.owner());
+        require (_storage.getAddress(keccak256(ROOT_KEY, 'contract')) != address(0x0));
+    }
+
+    /*ERC20 ... */
+
+    function name() external view returns(string) {
+        return _storage.getString(NAME_KEY_HASH);
+    }
+
+    function symbol() external view returns(string) {
+        return _storage.getString(SYMBOL_KEY_HASH);
+    }
+
+    function decimals() external view returns(uint) {
+        return _storage.getUint(DECIMALS_KEY_HASH);
+    }
+
+    function totalSupply() public view returns(uint) {
+        return _storage.getUint(TOTAL_SYPPLY_KEY_HASH);
+    }
+
+    function balanceOf(address userAddress) external view returns(uint) {
+        return getUserContract.balanceOf(userAddress);
+    }
+
+    function transfer(address _to, uint amount, string details) external {
+        address _from = msg.sender;
+        transferFromTo(_from, _to, amount, details);
+    }
+
+    function transferFrom(address _from, address _to, uint amount, string details) external
+        onlyByAdmin
+    {
+        transferFromTo(_from, _to, amount, details);
+    }
+
+    function approve(address _spender, uint amount) pure returns (bool success) {
+        return false; //not supported
+    }
+
+    function allowance(address userAddress, address _spender) view returns (uint) {
+        address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+        Admin admin = Admin(adminAddress);
+        if (admin.isAdmin(_spender)) {
+            return getUserContract.balanceOf(userAddress);
+        } else {
+            return 0;
+        }
+    }
+
+    /* ... ERC20*/
+
+    /*public*/
+
+    function isLatestVersion() external view
+        returns (bool) {
+        return _storage.isPermittedContractAddress(address(this));
+    }
+
+    /*owner permissions*/
+
+    function registerAdmin(address adminAddress, string details) external
+        onlyByOwner
+    {
+        uint numberOfAdmins = admin.register(adminAddress);
+
+        emit Register(
+            TransactionType.REGISTER_ADMIN,
+            adminAddress,
+            numberOfAdmins,
+            details
+        );
+    }
+
+    /*admin permissions*/
+
+    function registerCasino(address casinoAddress, string details) external
+        onlyByAdmin
+    {
+        uint numberOfCasinos = casino.register(casinoAddress);
+
+        emit Register(
+            TransactionType.REGISTER_CASINO,
+            casinoAddress,
+            numberOfCasinos,
+            details
+        );
+    }
+
+    function registerUser(address userAddress, address active, address passive, string details) external
+        onlyByAdmin
+    {
+        uint numberOfUsers = user.register(userAddress, active, passive);
+
+        emit Register(
+            TransactionType.REGISTER_USER,
+            userAddress,
+            numberOfUsers,
+            details
+        );
+    }
+
+    function registerEnrollRequestDocument(address userAddress, uint amount, string documentUID, string details) external
+        onlyByAdmin
+    {
+        require(amount > 0);
+
+        user.addDocument(userAddress, documentUID, amount);
+
+        emit RegisterDocument(
+            TransactionType.ENROLL_REQUEST,
+            userAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function cancelEnrollRequestDocument(address userAddress, uint amount, string documentUID, string details) external
+        onlyByAdmin
+    {
+        user.removeDocument(userAddress, documentUID);
+
+        emit RegisterDocument(
+            TransactionType.CANCEL_ENROLL_REQUEST,
+            userAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function registerWithdrawRequestDocument(address userAddress, uint amount, string documentUID, string details) external
+        onlyByAdmin
+    {
+        require(amount > 0);
+
+        user.addDocument(userAddress, documentUID, amount);
+
+        user.balanceChange(userAddress, (-amount));
+        user.balanceReservedChange(userAddress, amount);
+
+        emit RegisterDocument(
+            TransactionType.WITHDRAW_REQUEST,
+            userAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function enroll(address userAddress, uint amount, string documentUID, string details) external
+        onlyByAdmin
+    {
+        require(amount > 0);
+        uint currentTotalSupply = totalSupply();
+        require(currentTotalSupply + amount <= _storage.getUint(MAX_SUPPLY_KEY_HASH));
+
+        user.removeDocument(userAddress, documentUID);
+
+        user.balanceChange(userAddress, amount);
+        _storage.setUint(TOTAL_SYPPLY_KEY_HASH, currentTotalSupply + amount);
+
+        emit Mint(
+            TransactionType.ENROLL,
+            userAddress,
+            user.account(userAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+    function withdraw(address userAddress, uint amount, string documentUID, string details) external
+        onlyByAdmin
+    {
+        require(amount > 0);
+        uint currentTotalSupply = totalSupply();
+        assert(currentTotalSupply - amount >= 0);
+
+        user.removeDocument(userAddress, documentUID);
+
+        user.balanceReservedChange(userAddress, (-amount));
+
+        emit Burn(
+            TransactionType.WITHDRAW,
+            userAddress,
+            user.passiveAccount(userAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+    here
+
+    function depositCoin(address userAddress, address casinoAddress, uint amount, string documentUID, string details) public
+        onlyByAdmin
+        onlyForActiveUser(userAddress)
+        onlyForExistedCasino(casinoAddress)
+    {
+        require(amount > 0);
+        require(user.balanceOf(userAddress) >= amount);
+
+        casino.balanceChange(casinoAddress, amount);
+        user.balanceChange(userAddress, (-amount));
+
+        emit Exchange(
+            TransactionType.DEPOSIT,
+            userAddress,
+            user.account(userAddress),
+            casinoAddress,
+            amount,
+            documentUID,
+            details);
+    }
+
+    function takeCoin(address userAddress, address casinoAddress, uint amount, string documentUID, string details) public
+        onlyByUser(userAddress)
+        onlyForActiveUser(userAddress)
+        onlyForExistedCasino(casinoAddress)
+    {
+        require(amount > 0);
+        require(casino.balanceOf(casinoAddress) >= amount);
+
+        casino.balanceChange(casinoAddress, (-amount));
+        user.balanceChange(userAddress, amount);
+
+        emit Exchange(
+            TransactionType.TAKE,
+            userAddress,
+            casinoAddress,
+            user.account(userAddress),
+            amount,
+            documentUID,
+            details);
+    }
+
+    /*private section*/
+
+    function getUserContract() private view returns(User) {
+        address userAddress = _storage.getPermittedContractAddress(ContractType.USER);
+        return User(userAddress);
+    }
+
+    function transferFromTo(address _from, address _to, uint amount, string details) private
+    {
+        require(amount > 0);
+
+        User user = getUserContract();
+
+        user.balanceChange(_from, (-amount));
+        user.balanceChange(_to, amount);
+
+        emit Transfer(
+            _from,
+            _to,
+            TransactionType.TRANSFER,
+            amount,
+            details);
+    }
+
+    /*modifier*/
+
+    modifier onlyByOwner {
+        require(msg.sender == _storage.owner());
+        _;
+    }
+
+    modifier onlyByAdmin() {
+        address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+        Admin admin = Admin(adminAddress);
+        require (admin.isAdmin(msg.sender));
+        _;
+    }
+
+    modifier onlyByUser(address userAddress) {
+        require (msg.sender == userAddress);
+        _;
+    }
+
+    modifier onlyByUserOrAdmin(address userAddress) {
+        if (msg.sender == userAddress) {
+            require(user.exists(userAddress));
+            require (user.isActive(userAddress));
+        } else {
+            require(admin.isAdmin(msg.sender));
+        }
+        _;
+    }
+
+}

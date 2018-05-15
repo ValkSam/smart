@@ -7,7 +7,7 @@ import "browser/Events.sol";
 
 contract Casino is typeAware {
 
-    string ROOT_KEY = 'casino.';
+    string private ROOT_KEY = 'casino.';
 
     Storage private _storage;
 
@@ -16,16 +16,23 @@ contract Casino is typeAware {
         require(msg.sender == _storage.owner());
     }
 
-    /*owner permissions*/
+    /*public*/
 
     function isLatestVersion() external view
-        onlyByOwner
         returns (bool) {
-        return _storage.getAddress(keccak256(ROOT_KEY, 'contract')) == address(this);
+        return _storage.isPermittedContractAddress(address(this));
     }
 
+    function isCasino(address _address) external view
+        returns(bool)
+    {
+        return exists(_address);
+    }
+
+    /*token permissions*/
+
     function register(address casinoAddress) external
-        onlyByOwner
+        onlyByLatestTokenContractVersion
         returns (uint)
     {
         require(!exists(casinoAddress));
@@ -38,13 +45,6 @@ contract Casino is typeAware {
     }
 
     /*admin permissions*/
-
-    function isCasino(address _address) external view
-        onlyByAdmin
-        returns(bool)
-    {
-        return exists(_address);
-    }
 
     function balanceOf(address casinoAddress) external view
         onlyByAdmin
@@ -73,15 +73,15 @@ contract Casino is typeAware {
 
     /*Modifier*/
 
-    modifier onlyByOwner {
-        require(msg.sender == _storage.owner());
-        _;
-    }
-
     modifier onlyByAdmin() {
         address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
         Admin admin = Admin(adminAddress);
         require (admin.isAdmin(msg.sender));
+        _;
+    }
+
+    modifier onlyByLatestTokenContractVersion() {
+        require(_storage.getPermittedContractAddress(ContractType.TOKEN) == msg.sender);
         _;
     }
 
