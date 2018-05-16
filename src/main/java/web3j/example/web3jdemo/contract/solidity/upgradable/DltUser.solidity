@@ -6,7 +6,7 @@ import "browser/DltToken.sol";
 import "browser/Libs.sol";
 import "browser/Events.sol";
 
-contract User is typeAware {
+contract User is typeAware, eventRegisterAware {
 
     using Arrays for bytes32[];
     using Strings for string;
@@ -38,11 +38,14 @@ contract User is typeAware {
         return active(userAddress);
     }
 
-    /*token permissions*/
+    function checkContractType(ContractType contractType) external pure {
+        require(contractType == ContractType.USER);
+    }
 
-    function register(address userAddress, address userReservedAddress) external
-        onlyByLatestTokenContractVersion
-        returns (uint)
+    /*admin permission*/
+
+    function register(address userAddress, address userReservedAddress, string details) external
+        onlyByAdmin
     {
         require(!exists(userAddress));
         _storage.setBool(keccak256(ROOT_KEY, userAddress), true);
@@ -53,8 +56,15 @@ contract User is typeAware {
         _storage.setAddress(keccak256(ROOT_KEY, userAddress, '.address.reserved'), userReservedAddress);
         _storage.setUint(keccak256(ROOT_KEY, userAddress, '.balance.reserved'), 0);
 
-        return _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length;
+        emit Register(
+            TransactionType.REGISTER_USER,
+            userAddress,
+            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            details
+        );
     }
+
+    /*token permissions*/
 
     function balanceChange(address userAddress, uint amount) external
         onlyByLatestTokenContractVersion
@@ -104,6 +114,10 @@ contract User is typeAware {
         return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.balance'));
     }
 
+    function getReservedAddress(address userAddress) view external returns(address) {
+        return _storage.getAddress(keccak256(ROOT_KEY, userAddress, '.address.reserved'));
+    }
+
     function balanceReservedOf(address userAddress) external view
         onlyByLatestTokenContractVersion
         returns(uint)
@@ -148,6 +162,15 @@ contract User is typeAware {
     }
 
     /*Modifier*/
+
+    modifier onlyByAdmin() {
+        if (msg.sender != _storage.owner()) {
+            address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+            Admin admin = Admin(adminAddress);
+            require (admin.isAdmin(msg.sender));
+        }
+        _;
+    }
 
     modifier onlyForActiveUser(address indexAddress) {
         require (active(indexAddress));

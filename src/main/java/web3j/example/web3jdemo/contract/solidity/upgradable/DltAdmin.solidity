@@ -3,7 +3,7 @@ pragma solidity ^0.4.23;
 import "browser/DltStorage.sol";
 import "browser/Events.sol";
 
-contract Admin is typeAware {
+contract Admin is typeAware, eventRegisterAware {
 
     string private ROOT_KEY = 'admin.';
 
@@ -27,17 +27,28 @@ contract Admin is typeAware {
         return _storage.getBool(keccak256(ROOT_KEY, _address));
     }
 
-    /*token permissions*/
+    function checkContractType(ContractType contractType) external pure {
+        require(contractType == ContractType.ADMIN);
+    }
 
-    function register(address adminAddress) external
-        onlyByLatestTokenContractVersion
-        returns (uint)
+    /*owner permissions*/
+
+    function register(address adminAddress, string details) external
+        onlyByOwner
     {
         require(!exists(adminAddress));
         _storage.setBool(keccak256(ROOT_KEY, adminAddress), true);
         _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), adminAddress);
-        return _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length;
+
+        emit Register(
+            TransactionType.REGISTER_ADMIN,
+            adminAddress,
+            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            details
+        );
     }
+
+    /*token permissions*/
 
     /*private section*/
 
@@ -46,6 +57,11 @@ contract Admin is typeAware {
     }
 
     /*Modifier*/
+
+    modifier onlyByOwner {
+        require(msg.sender == _storage.owner());
+        _;
+    }
 
     modifier onlyByLatestTokenContractVersion() {
         require(_storage.getPermittedContractAddress(ContractType.TOKEN) == msg.sender);

@@ -5,7 +5,7 @@ import "browser/DltAdmin.sol";
 import "browser/Libs.sol";
 import "browser/Events.sol";
 
-contract Casino is typeAware {
+contract Casino is typeAware, eventRegisterAware {
 
     string private ROOT_KEY = 'casino.';
 
@@ -29,25 +29,31 @@ contract Casino is typeAware {
         return exists(_address);
     }
 
-    /*token permissions*/
+    function checkContractType(ContractType contractType) external pure {
+        require(contractType == ContractType.CASINO);
+    }
 
-    function register(address casinoAddress) external
-        onlyByLatestTokenContractVersion
-        returns (uint)
+    /*admin permission*/
+
+    function register(address casinoAddress, string details) external
+        onlyByAdmin
     {
         require(!exists(casinoAddress));
         _storage.setBool(keccak256(ROOT_KEY, casinoAddress), true);
         _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), casinoAddress);
 
-        _storage.setUint(keccak256(ROOT_KEY, casinoAddress, '.balance'), 0);
-
-        return _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length;
+        emit Register(
+            TransactionType.REGISTER_CASINO,
+            casinoAddress,
+            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            details
+        );
     }
 
-    /*admin permissions*/
+    /*token permissions*/
 
     function balanceOf(address casinoAddress) external view
-        onlyByAdmin
+        onlyByLatestTokenContractVersion
         returns(uint)
     {
         require(exists(casinoAddress));
@@ -55,7 +61,7 @@ contract Casino is typeAware {
     }
 
     function balanceChange(address casinoAddress, uint amount) external
-        onlyByAdmin
+        onlyByLatestTokenContractVersion
     {
         require(exists(casinoAddress));
         bytes32 key = keccak256(ROOT_KEY, casinoAddress, '.balance');
@@ -74,9 +80,11 @@ contract Casino is typeAware {
     /*Modifier*/
 
     modifier onlyByAdmin() {
-        address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
-        Admin admin = Admin(adminAddress);
-        require (admin.isAdmin(msg.sender));
+        if (msg.sender != _storage.owner()) {
+            address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+            Admin admin = Admin(adminAddress);
+            require (admin.isAdmin(msg.sender));
+        }
         _;
     }
 

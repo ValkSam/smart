@@ -27,13 +27,13 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
             address(this));
     }
 
-
     /*Contract registerer*/
 
     function registerPermittedContract(ContractType contractType, address contractAddress) external
         onlyByOwner
     {
         require(contractType != ContractType.STORAGE);
+        require(contractAddress.call(bytes4(keccak256("checkContractType(uint8)")), contractType));
         address previousRegisteredContractAddress = addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractType)];
         delete (addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, previousRegisteredContractAddress)]);
         addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractType)] = contractAddress;
