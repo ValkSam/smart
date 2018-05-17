@@ -2,7 +2,6 @@ pragma solidity ^0.4.23;
 
 import "browser/DltStorage.sol";
 import "browser/DltAdmin.sol";
-import "browser/DltToken.sol";
 import "browser/Libs.sol";
 import "browser/Events.sol";
 
@@ -42,9 +41,23 @@ contract User is typeAware, eventRegisterAware {
         require(contractType == ContractType.USER);
     }
 
+    function balanceOf(address userAddress) external view
+        returns(int)
+    {
+        require(exists(userAddress));
+        return _storage.getInt(keccak256(ROOT_KEY, userAddress, '.balance'));
+    }
+
+    function balanceReservedOf(address userAddress) external view
+        returns(int)
+    {
+        require(exists(userAddress));
+        return _storage.getInt(keccak256(ROOT_KEY, userAddress, '.balance.reserved'));
+    }
+
     /*admin permission*/
 
-    function register(address userAddress, address userReservedAddress, string details) external
+    function register(address userAddress, string details) external
         onlyByAdmin
     {
         require(!exists(userAddress));
@@ -52,9 +65,8 @@ contract User is typeAware, eventRegisterAware {
         _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), userAddress);
 
         _storage.setBool(keccak256(ROOT_KEY, userAddress, '.active'), true);
-        _storage.setUint(keccak256(ROOT_KEY, userAddress, '.balance'), 0);
-        _storage.setAddress(keccak256(ROOT_KEY, userAddress, '.address.reserved'), userReservedAddress);
-        _storage.setUint(keccak256(ROOT_KEY, userAddress, '.balance.reserved'), 0);
+        _storage.setInt(keccak256(ROOT_KEY, userAddress, '.balance'), 0);
+        _storage.setInt(keccak256(ROOT_KEY, userAddress, '.balance.reserved'), 0);
 
         emit Register(
             TransactionType.REGISTER_USER,
@@ -64,9 +76,34 @@ contract User is typeAware, eventRegisterAware {
         );
     }
 
+    function activate(address userAddress) external
+        returns(bool)
+    {
+        setActive(userAddress, true);
+        return true;
+    }
+
+    function deActivate(address userAddress) external
+        returns(bool)
+    {
+        setActive(userAddress, false);
+        return true;
+    }
+
+    function documentAmount(address userAddress, string documentUID) external view
+        returns(int){
+        return _storage.getInt(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
+    }
+
+    function documentsUIDs(address userAddress) external view
+        returns (bytes32[] documentUIDs)
+    {
+        return _storage.getBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'));
+    }
+
     /*token permissions*/
 
-    function balanceChange(address userAddress, uint amount) external
+    function balanceChange(address userAddress, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
@@ -75,7 +112,7 @@ contract User is typeAware, eventRegisterAware {
         balanceChange (key, amount);
     }
 
-    function balanceReservedChange(address userAddress, uint amount) external
+    function balanceReservedChange(address userAddress, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
@@ -84,69 +121,41 @@ contract User is typeAware, eventRegisterAware {
         balanceChange(key, amount);
     }
 
-    function addDocument(address userAddress, string documentUID, uint amount) external
+    function addDocument(address userAddress, string documentUID, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
+        returns(bool)
     {
         require(bytes(documentUID).length != 0);
         require(bytes(documentUID).length <= 32);
         require(amount > 0);
         require(!documentExists(userAddress, documentUID));
-        _storage.setUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID), amount);
+        _storage.setInt(keccak256(ROOT_KEY, userAddress, '.document.', documentUID), amount);
         _storage.pushBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
+        return true;
     }
 
     function removeDocument(address userAddress, string documentUID) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
+        returns(bool)
     {
         require(documentExists(userAddress, documentUID));
         uint idx = _storage.getBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index')).getArrayItemIndex(documentUID.stringToBytes32());
         assert(idx != uint(-1));
-        _storage.deleteUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
+        _storage.deleteInt(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
         _storage.removeBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
-    }
-
-    function balanceOf(address userAddress) external view
-        returns(uint)
-    {
-        require(exists(userAddress));
-        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.balance'));
-    }
-
-    function getReservedAddress(address userAddress) view external returns(address) {
-        return _storage.getAddress(keccak256(ROOT_KEY, userAddress, '.address.reserved'));
-    }
-
-    function balanceReservedOf(address userAddress) external view
-        onlyByLatestTokenContractVersion
-        returns(uint)
-    {
-        require(exists(userAddress));
-        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.balance.reserved'));
-    }
-
-    function documentAmount(address userAddress, string documentUID) external view
-        onlyByLatestTokenContractVersion
-        returns(uint){
-        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
-    }
-
-    function documentsUIDs(address userAddress) external view
-        onlyByLatestTokenContractVersion
-        returns (bytes32[] documentUIDs)
-    {
-        return _storage.getBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'));
+        return true;
     }
 
     /*private section*/
 
-    function balanceChange(bytes32 key, uint amount) private {
+    function balanceChange(bytes32 key, int amount) private {
         require(amount != 0);
-        uint currentBalance = _storage.getUint(key);
-        uint newBalance = currentBalance + amount;
+        int currentBalance = _storage.getInt(key);
+        int newBalance = currentBalance + amount;
         require(newBalance >= 0);
-        _storage.setUint(key, newBalance);
+        _storage.setInt(key, newBalance);
     }
 
     function exists(address _address) private view returns(bool){
@@ -154,11 +163,17 @@ contract User is typeAware, eventRegisterAware {
     }
 
     function active(address userAddress) private view returns(bool){
-        return _storage.getBool(keccak256(ROOT_KEY, 'active.', userAddress));
+        return _storage.getBool(keccak256(ROOT_KEY, userAddress, '.active'));
+    }
+
+    function setActive(address userAddress, bool value) private
+        onlyByAdmin
+    {
+        _storage.setBool(keccak256(ROOT_KEY, userAddress, '.active'), value);
     }
 
     function documentExists(address userAddress, string documentUID) private view returns(bool) {
-        return _storage.getUint(keccak256(ROOT_KEY, userAddress, '.document.', documentUID)) != 0;
+        return _storage.getInt(keccak256(ROOT_KEY, userAddress, '.document.', documentUID)) != 0;
     }
 
     /*Modifier*/

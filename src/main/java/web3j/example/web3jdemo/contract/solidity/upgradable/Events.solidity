@@ -44,7 +44,7 @@ contract eventRegisterDocumentAware is typeAware {
         TransactionType txType,
         address user,
         string documentUID,
-        uint amount,
+        int amount,
         string details
         );
 
@@ -56,7 +56,7 @@ contract eventTransferAware is typeAware {
         address indexed from,
         address indexed to,
         TransactionType indexed txType,
-        uint tokens,
+        int tokens,
         string details
         );
 
@@ -68,7 +68,7 @@ contract eventExchangeAware is typeAware {
         TransactionType txType,
         address sender,
         address receiver,
-        uint amount,
+        int amount,
         string documentUID,
         string details
         );
@@ -80,8 +80,7 @@ contract eventMintAware is typeAware {
     event Mint(
         TransactionType txType,
         address user,
-        address mintedAddress,
-        uint amount,
+        int amount,
         string documentUID,
         string details
         );
@@ -89,8 +88,7 @@ contract eventMintAware is typeAware {
     event Burn(
         TransactionType txType,
         address user,
-        address burnedAddress,
-        uint amount,
+        int amount,
         string documentUID,
         string details
         );

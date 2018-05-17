@@ -54,21 +54,21 @@ contract Casino is typeAware, eventRegisterAware {
 
     function balanceOf(address casinoAddress) external view
         onlyByLatestTokenContractVersion
-        returns(uint)
+        returns(int)
     {
         require(exists(casinoAddress));
-        return _storage.getUint(keccak256(ROOT_KEY, casinoAddress, '.balance'));
+        return _storage.getInt(keccak256(ROOT_KEY, casinoAddress, '.balance'));
     }
 
-    function balanceChange(address casinoAddress, uint amount) external
+    function balanceChange(address casinoAddress, int amount) external
         onlyByLatestTokenContractVersion
     {
         require(exists(casinoAddress));
         bytes32 key = keccak256(ROOT_KEY, casinoAddress, '.balance');
-        uint currentBalance = _storage.getUint(key);
-        uint newBalance = currentBalance + amount;
+        int currentBalance = _storage.getInt(key);
+        int newBalance = currentBalance + amount;
         require(newBalance >= 0);
-        _storage.setUint(key, newBalance);
+        _storage.setInt(key, newBalance);
     }
 
     /*private section*/

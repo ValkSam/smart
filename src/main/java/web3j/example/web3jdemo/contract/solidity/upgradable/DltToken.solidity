@@ -1,19 +1,24 @@
 pragma solidity ^0.4.23;
 
+import "browser/DltStorage.sol";
 import "browser/Libs.sol";
 import "browser/Events.sol";
 import "browser/DltAdmin.sol";
 import "browser/DltCasino.sol";
 import "browser/DltUser.sol";
 
-contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, eventMintAware, eventRegisterDocumentAware {
+contract BaseToken  {
 
-    string private ROOT_KEY = 'token.';
-    bytes32 TOTAL_SYPPLY_KEY_HASH = keccak256(ROOT_KEY, 'ERC20.totalSupply');
+    string internal ROOT_KEY = 'token.';
+    bytes32 internal TOTAL_SYPPLY_KEY_HASH = keccak256(ROOT_KEY, 'ERC20.totalSupply');
 
-    Storage private _storage;
+    Storage internal _storage;
 
-    constructor (address storageContractAddress, string _name, string _symbol, uint _maxSupply, uint _decimals) public {
+}
+
+contract Erc20Token is BaseToken, eventTransferAware {
+
+    constructor (address storageContractAddress, string _name, string _symbol, int _maxSupply, int8 _decimals) public {
         _storage = Storage(storageContractAddress);
         require(msg.sender == _storage.owner());
         name = _name;
@@ -26,33 +31,33 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
 
     string public name;
     string public symbol;
-    uint public maxSupply;
-    uint public decimals;
+    int public maxSupply;
+    int8 public decimals;
 
-    function totalSupply() public view returns(uint) {
-        return _storage.getUint(TOTAL_SYPPLY_KEY_HASH);
+    function totalSupply() public view returns(int) {
+        return _storage.getInt(TOTAL_SYPPLY_KEY_HASH);
     }
 
-    function balanceOf(address userAddress) external view returns(uint) {
+    function balanceOf(address userAddress) external view returns(int) {
         return getUserContract().balanceOf(userAddress);
     }
 
-    function transfer(address _to, uint amount, string details) external {
+    function transfer(address _to, int amount, string details) external {
         address _from = msg.sender;
         transferFromTo(_from, _to, amount, details);
     }
 
-    function transferFrom(address _from, address _to, uint amount, string details) external
+    function transferFrom(address _from, address _to, int amount, string details) external
         onlyByAdmin
     {
         transferFromTo(_from, _to, amount, details);
     }
 
-    function approve(address _spender, uint amount) external pure returns (bool success) {
+    function approve(address _spender, int amount) external pure returns (bool success) {
         return false; //not supported
     }
 
-    function allowance(address userAddress, address _spender) external view returns (uint) {
+    function allowance(address userAddress, address _spender) external view returns (int) {
         address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
         Admin admin = Admin(adminAddress);
         if (admin.isAdmin(_spender)) {
@@ -63,6 +68,48 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
     }
 
     /* ... ERC20*/
+
+    /*private section*/
+
+    function getUserContract() internal view returns(User) {
+        address userAddress = _storage.getPermittedContractAddress(ContractType.USER);
+        return User(userAddress);
+    }
+
+    function transferFromTo(address _from, address _to, int amount, string details) private  {
+        require(amount > 0);
+
+        User user = getUserContract();
+
+        user.balanceChange(_from, (-amount));
+        user.balanceChange(_to, amount);
+
+        emit Transfer(
+            _from,
+            _to,
+            TransactionType.TRANSFER,
+            amount,
+            details);
+    }
+
+    /*modifier*/
+
+    modifier onlyByAdmin() {
+        if (msg.sender != _storage.owner()) {
+            address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
+            Admin admin = Admin(adminAddress);
+            require (admin.isAdmin(msg.sender));
+        }
+        _;
+    }
+
+}
+
+contract Token is Erc20Token, eventRegisterAware, eventExchangeAware, eventMintAware, eventRegisterDocumentAware {
+
+    constructor (address storageContractAddress, string _name, string _symbol, int _maxSupply, int8 _decimals)
+        Erc20Token(storageContractAddress, _name, _symbol, _maxSupply, _decimals)
+        public {}
 
     /*public*/
 
@@ -77,11 +124,9 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
 
     /*admin permissions*/
 
-    function registerEnrollRequestDocument(address userAddress, uint amount, string documentUID, string details) external
+    function registerEnrollRequestDocument(address userAddress, int amount, string documentUID, string details) external
         onlyByAdmin
     {
-        require(amount > 0);
-
         User user = getUserContract();
         user.addDocument(userAddress, documentUID, amount);
 
@@ -93,7 +138,7 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
             details);
     }
 
-    function cancelEnrollRequestDocument(address userAddress, uint amount, string documentUID, string details) external
+    function cancelEnrollRequestDocument(address userAddress, int amount, string documentUID, string details) external
         onlyByAdmin
     {
         User user = getUserContract();
@@ -107,12 +152,9 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
             details);
     }
 
-
-    function registerWithdrawRequestDocument(address userAddress, uint amount, string documentUID, string details) external
+    function registerWithdrawRequestDocument(address userAddress, int amount, string documentUID, string details) external
         onlyByAdmin
     {
-        require(amount > 0);
-
         User user = getUserContract();
         user.addDocument(userAddress, documentUID, amount);
         user.balanceChange(userAddress, (-amount));
@@ -126,11 +168,11 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
             details);
     }
 
-    function enroll(address userAddress, uint amount, string documentUID, string details) external
+    function enroll(address userAddress, int amount, string documentUID, string details) external
         onlyByAdmin
     {
         require(amount > 0);
-        uint currentTotalSupply = totalSupply();
+        int currentTotalSupply = totalSupply();
         require(currentTotalSupply + amount <= maxSupply);
 
         User user = getUserContract();
@@ -142,17 +184,16 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
         emit Mint(
             TransactionType.ENROLL,
             userAddress,
-            userAddress,
             amount,
             documentUID,
             details);
     }
 
-    function withdraw(address userAddress, uint amount, string documentUID, string details) external
+    function withdraw(address userAddress, int amount, string documentUID, string details) external
         onlyByAdmin
     {
         require(amount > 0);
-        uint currentTotalSupply = totalSupply();
+        int currentTotalSupply = totalSupply();
         assert(currentTotalSupply - amount >= 0);
 
         User user = getUserContract();
@@ -164,19 +205,18 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
         emit Burn(
             TransactionType.WITHDRAW,
             userAddress,
-            user.getReservedAddress(userAddress),
             amount,
             documentUID,
             details);
     }
 
-    function depositCoin(address userAddress, address casinoAddress, uint amount, string documentUID, string details) public
+    function depositCoin(address userAddress, address casinoAddress, int amount, string documentUID, string details) public
         onlyByAdmin
     {
         exchangeCoin(TransactionType.DEPOSIT, userAddress, casinoAddress, amount, documentUID, details);
     }
 
-    function takeCoin(address userAddress, address casinoAddress, uint amount, string documentUID, string details) public
+    function takeCoin(address userAddress, address casinoAddress, int amount, string documentUID, string details) public
         onlyByAdmin
     {
         exchangeCoin(TransactionType.TAKE, userAddress, casinoAddress, amount, documentUID, details);
@@ -184,7 +224,7 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
 
     /*private section*/
 
-    function exchangeCoin(TransactionType transactionType, address userAddress, address casinoAddress, uint amount, string documentUID, string details) private {
+    function exchangeCoin(TransactionType transactionType, address userAddress, address casinoAddress, int amount, string documentUID, string details) private {
         require(amount > 0);
 
         Casino casino = getCasinoContract();
@@ -219,39 +259,9 @@ contract Token is eventRegisterAware, eventTransferAware, eventExchangeAware, ev
         return Casino(casinoAddress);
     }
 
-    function getUserContract() private view returns(User) {
-        address userAddress = _storage.getPermittedContractAddress(ContractType.USER);
-        return User(userAddress);
+    function setTotalSupply(int amount) private {
+        _storage.setInt(TOTAL_SYPPLY_KEY_HASH, amount);
     }
 
-    function transferFromTo(address _from, address _to, uint amount, string details) private
-    {
-        require(amount > 0);
-
-        User user = getUserContract();
-
-        user.balanceChange(_from, (-amount));
-        user.balanceChange(_to, amount);
-
-        emit Transfer(
-            _from,
-            _to,
-            TransactionType.TRANSFER,
-            amount,
-            details);
-    }
-
-    function setTotalSupply(uint amount) private {
-        _storage.setUint(TOTAL_SYPPLY_KEY_HASH, amount);
-    }
-
-    /*modifier*/
-
-    modifier onlyByAdmin() {
-        address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
-        Admin admin = Admin(adminAddress);
-        require (admin.isAdmin(msg.sender));
-        _;
-    }
 
 }

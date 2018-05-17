@@ -10,12 +10,12 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
 
     string private PERMITTED_CONTRACT_ROOT_KEY = 'contract.permitted.';
 
-    mapping(bytes32 => uint256)    private uIntStorage;
+    mapping(bytes32 => uint)    private uIntStorage;
     mapping(bytes32 => string)     private stringStorage;
     mapping(bytes32 => address)    private addressStorage;
     mapping(bytes32 => bytes)      private bytesStorage;
     mapping(bytes32 => bool)       private boolStorage;
-    mapping(bytes32 => int256)     private intStorage;
+    mapping(bytes32 => int)     private intStorage;
 
     mapping(bytes32 => address[])  private addressArrayStorage;
     mapping(bytes32 => bytes32[])  private bytes32ArrayStorage;
