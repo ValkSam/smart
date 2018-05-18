@@ -5,14 +5,14 @@ import org.web3j.crypto.Credentials;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.blockchain.utils.CredentialsHelper;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenBalanceOfOperation;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenCheckContractTypeOperation;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenDecimalsOperation;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenIsLatestVersionOperation;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenMaxSupplyOperation;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenNameOperation;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenSymbolOperation;
-import web3j.example.web3jdemo.contract.operation.owner.readonly.GetTokenTotalSupplyOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenBalanceOfOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenCheckContractTypeOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenDecimalsOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenIsLatestVersionOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenMaxSupplyOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenNameOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenSymbolOperation;
+import web3j.example.web3jdemo.contract.operation.token.readonly.GetTokenTotalSupplyOperation;
 
 import java.io.IOException;
 

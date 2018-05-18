@@ -1,11 +1,12 @@
-package web3j.example.web3jdemo.contract.operation.owner.transactional.document;
+package web3j.example.web3jdemo.contract.operation.token.transactional.document;
 
 import lombok.Getter;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.actiontype.TokenContractActionType;
 import web3j.example.web3jdemo.contract.operation.exception.ContractException;
-import web3j.example.web3jdemo.contract.operation.owner.transactional.AbstractTokenContractTransactionalOperation;
+import web3j.example.web3jdemo.contract.operation.token.transactional.AbstractTokenContractTransactionalOperation;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
@@ -26,14 +27,14 @@ public abstract class AbstractTokenContractUserDocumentOperation extends Abstrac
     private Consumer<RegisterDocumentReceipt> onReject;
 
     public AbstractTokenContractUserDocumentOperation(Credentials senderCredentials,
-                                                      ContractUserActionType contractUserActionType,
+                                                      TokenContractActionType tokenContractActionType,
                                                       DldWallet userWallet,
                                                       BigInteger amount,
                                                       String documentUid,
                                                       String data,
                                                       Consumer<RegisterDocumentEvent> onSuccess,
                                                       Consumer<RegisterDocumentReceipt> onReject) {
-        super(senderCredentials, contractUserActionType, data);
+        super(senderCredentials, tokenContractActionType, data);
         this.userWallet = userWallet;
         this.amount = amount;
         this.documentUID = documentUid;
@@ -42,12 +43,12 @@ public abstract class AbstractTokenContractUserDocumentOperation extends Abstrac
     }
 
     public AbstractTokenContractUserDocumentOperation(Credentials senderCredentials,
-                                                      ContractUserActionType contractUserActionType,
+                                                      TokenContractActionType tokenContractActionType,
                                                       DldWallet userWallet,
                                                       BigInteger amount,
                                                       String documentUid,
                                                       String data) {
-        super(senderCredentials, contractUserActionType, data);
+        super(senderCredentials, tokenContractActionType, data);
         this.userWallet = userWallet;
         this.amount = amount;
         this.documentUID = documentUid;

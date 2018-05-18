@@ -12,11 +12,10 @@ ethereum:
       connectionTimeoutSeconds: 30
     url: http://localhost:8501
   contract:
-    address: "0x592d7e1d7f533862c5f2935230e5cc6c842109cf"
-#    address: "0x216857e1E0977A11780a84fF5d27AdFc93e93741"
+    address: "0xfbb3719fd53afe9bc0af9dfb3601429c7a058d78"
     owner:
       address: "0x515b0bd2f69b2f6106bbb21a6e66f84740adcae9"
-      privateKey: 78917374818337044569113600265904518667624904769081976474081495335171398564570
+      privateKey: 76376803091642704957644354574496388818985034477174475164229193213582287584295
       wallet:
         file: c:/DEVELOPING/Etherium/devnet/node1/keystore/UTC--2018-04-02T13-30-36.958062800Z--a5c233471f6dd13a2f98a54badcf21d85605649a
         password: pwdnode1;
@@ -43,4 +42,5 @@ contractOperation:
     queueCapacity: 10000
 
 web3j.scope: singleton
+#web3j.scope: prototype
 web3j.pollingIntervalMillisec: 2500

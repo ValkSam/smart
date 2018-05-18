@@ -1,4 +1,4 @@
-package web3j.example.web3jdemo.contract.operation.owner.transactional.document;
+package web3j.example.web3jdemo.contract.operation.token.transactional.document;
 
 import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.context.annotation.Scope;
@@ -6,7 +6,7 @@ import org.springframework.stereotype.Component;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
-import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.actiontype.TokenContractActionType;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
 import web3j.example.web3jdemo.domain.entity.DldWallet;
@@ -16,13 +16,13 @@ import java.math.BigInteger;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import static web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType.ENROLL_REQUEST;
+import static web3j.example.web3jdemo.contract.operation.actiontype.TokenContractActionType.REGISTER_ENROLL_DOCUMENT;
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
 public class RegisterEnrollRequestDocumentOperation extends AbstractTokenContractUserDocumentOperation {
 
-    private static final ContractUserActionType ACTION_TYPE = ENROLL_REQUEST;
+    private static final TokenContractActionType ACTION_TYPE = REGISTER_ENROLL_DOCUMENT;
 
     public RegisterEnrollRequestDocumentOperation(Credentials senderCredentials,
                                                   DldWallet userWallet,

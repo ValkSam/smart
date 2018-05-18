@@ -1,10 +1,11 @@
-package web3j.example.web3jdemo.contract.operation.owner.transactional;
+package web3j.example.web3jdemo.contract.operation.token.transactional;
 
 import lombok.Getter;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import web3j.example.web3jdemo.contract.operation.AbstractContractTransactionalOperation;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractUserActionType;
+import web3j.example.web3jdemo.contract.operation.actiontype.TokenContractActionType;
 import web3j.example.web3jdemo.contract.wrapper.token.DltTokenContract;
 
 import javax.annotation.PostConstruct;
@@ -19,9 +20,9 @@ public abstract class AbstractTokenContractTransactionalOperation extends Abstra
 
     public AbstractTokenContractTransactionalOperation(
             Credentials senderCredentials,
-            ContractUserActionType contractUserActionType,
+            TokenContractActionType tokenContractActionType,
             String data) {
-        super(contractUserActionType, data);
+        super(tokenContractActionType, data);
         this.senderCredentials = senderCredentials;
     }
 

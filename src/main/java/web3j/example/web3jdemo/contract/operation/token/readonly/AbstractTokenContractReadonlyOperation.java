@@ -1,10 +1,10 @@
-package web3j.example.web3jdemo.contract.operation.owner.readonly;
+package web3j.example.web3jdemo.contract.operation.token.readonly;
 
 import lombok.Getter;
 import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import web3j.example.web3jdemo.contract.operation.AbstractContractReadonlyOperation;
-import web3j.example.web3jdemo.contract.operation.actiontype.ContractOwnerActionType;
+import web3j.example.web3jdemo.contract.operation.actiontype.TokenContractActionType;
 import web3j.example.web3jdemo.contract.wrapper.token.DltTokenContract;
 
 import javax.annotation.PostConstruct;
@@ -19,8 +19,8 @@ public abstract class AbstractTokenContractReadonlyOperation extends AbstractCon
 
     public AbstractTokenContractReadonlyOperation(
             Credentials senderCredentials,
-            ContractOwnerActionType contractOwnerActionType) {
-        super(contractOwnerActionType);
+            TokenContractActionType tokenContractActionType) {
+        super(tokenContractActionType);
         this.senderCredentials = senderCredentials;
     }
 

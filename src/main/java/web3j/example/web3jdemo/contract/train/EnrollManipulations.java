@@ -106,13 +106,31 @@ public class EnrollManipulations {
         System.out.println("ERROR: " + blocksStatisticsError);
     }
 
-    public void registerOneDocument(int walletId, int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException, CipherException {
+    public void registerDocumentsForOneUser(int walletId, int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException, CipherException {
+        latch = new CountDownLatch(docCount);
+
+        Credentials senderCredentials = credentialsHelper.getOwnerCredentials();
+
+        for (int i = 1+100; i <= docCount+100; i++) {
+            registerEnroll(senderCredentials, walletId, "doc___" + i);
+        }
+
+        latch.await();
+
+        System.out.println("=================================");
+        System.out.println("ALL: " + blocksStatistics);
+        System.out.println("SUCCESS: " + blocksStatisticsSuccess);
+        System.out.println("REJECT: " + blocksStatisticsReject);
+        System.out.println("ERROR: " + blocksStatisticsError);
+    }
+
+    public void cancelDocumentsForOneUser(int walletId, int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException, CipherException {
         latch = new CountDownLatch(docCount);
 
         Credentials senderCredentials = credentialsHelper.getOwnerCredentials();
 
         for (int i = 1; i <= docCount; i++) {
-            registerEnroll(senderCredentials, walletId, "doc___" + i);
+            cancelEnroll(senderCredentials, walletId, "doc___" + i);
         }
 
         latch.await();
@@ -145,10 +163,23 @@ public class EnrollManipulations {
                 senderCredentials,
                 dldWalletService.getWalletById(walletId),
                 BigInteger.valueOf(walletId),
-                "doc",
-//                doc + '\u241F' + "Y",
-//                "{\"invoiceAmount\":" + (walletId * 10) + "}",
-                "{}",
+                doc + '\u241F' + "Y",
+                "{\"invoiceAmount\":" + (walletId * 10) + "}",
+                onRegisterDocumentSuccess,
+                onRegisterDocumentReject);
+
+        CompletableFuture<TransactionReceipt> receipt = enrollRequestOperation.execute();
+
+    }
+
+    public void cancelEnroll(Credentials senderCredentials, int walletId, String doc) throws ExecutionException, InterruptedException, IOException, TransactionException {
+
+        AbstractContractTransactionalOperation enrollRequestOperation = contractOperationFactory.cancelEnrollRequestDocumentOperation(
+                senderCredentials,
+                dldWalletService.getWalletById(walletId),
+                BigInteger.valueOf(walletId),
+                doc + '\u241F' + "Y",
+                "{\"invoiceAmount\":" + (walletId * 10) + "}",
                 onRegisterDocumentSuccess,
                 onRegisterDocumentReject);
 
