@@ -133,12 +133,8 @@ public class Web3jHelper {
             Credentials credentialsActive = Credentials.create(Keys.createEcKeyPair());
             Credentials credentialsPassive = Credentials.create(Keys.createEcKeyPair());
             return DldWallet.builder()
-                    .addressIndex(credentialsIndex.getAddress())
-                    .addressIndexKey(credentialsIndex.getEcKeyPair().getPrivateKey().toString())
-                    .addressActive(credentialsActive.getAddress())
-                    .addressActiveKey(credentialsActive.getEcKeyPair().getPrivateKey().toString())
-                    .addressPassive(credentialsPassive.getAddress())
-                    .addressPassiveKey(credentialsPassive.getEcKeyPair().getPrivateKey().toString())
+                    .address(credentialsIndex.getAddress())
+                    .addressKey(credentialsIndex.getEcKeyPair().getPrivateKey().toString())
                     .build();
         } catch (Exception e) {
             log.error("Error creating a new wallet. ", e);

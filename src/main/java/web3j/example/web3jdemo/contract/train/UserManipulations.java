@@ -2,9 +2,7 @@ package web3j.example.web3jdemo.contract.train;
 
 import lombok.Getter;
 import lombok.Setter;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
-import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
@@ -12,7 +10,6 @@ import web3j.example.web3jdemo.service.DldWalletService;
 
 import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CountDownLatch;
@@ -29,6 +26,7 @@ public class UserManipulations {
     private final DldWalletService dldWalletService;
     private final ContractOperationFactory contractOperationFactory;
     private CountDownLatch latch;
+
     private Consumer<RegisterEvent> onRegisterUserSuccess = (event) -> {
         synchronized (ConcurrentMap.class) {
             Integer block = event.getReceipt().getBlockNumber().intValue();
@@ -38,6 +36,7 @@ public class UserManipulations {
         System.out.println(">> OK ! txType: " + event.getEventResponse().txType + " : " + event.getEventResponse().details + " : " + event.getReceipt().getBlockNumber());
         if (!isNull(latch)) latch.countDown();
     };
+
     private Consumer<RegisterUserReceipt> onRegisterUserReject = (receipt) -> {
         if (receipt.getException().isPresent()) {
             System.out.println(">> ERROR ! txType: " + receipt.getContractOperation().getContractActionType() + " : " + receipt.getContractOperation().getData() + " : " + receipt.getException().get() + " : " + Thread.currentThread());
@@ -61,7 +60,7 @@ public class UserManipulations {
         latch = new CountDownLatch(userCount);
 
         for (int i = 1; i <= userCount; i++) {
-            registerUser(i);
+//            registerUser(i);
         }
 
         latch.await();
@@ -71,7 +70,7 @@ public class UserManipulations {
         System.exit(0);
     }
 
-    public void registerUser(int id) throws ExecutionException, InterruptedException, IOException, TransactionException {
+    /*public void registerUser(int id) throws ExecutionException, InterruptedException, IOException, TransactionException {
         AbstractContractOperation registerUserOperation = contractOperationFactory.registerUserOperation(
                 dldWalletService.getWalletById(id),
                 "{\"userId\":" + id + "}",
@@ -88,6 +87,6 @@ public class UserManipulations {
 
         CompletableFuture<TransactionReceipt> receipt = registerUserOperation.execute();
         System.out.println(receipt.get());
-    }
+    }*/
 
 }

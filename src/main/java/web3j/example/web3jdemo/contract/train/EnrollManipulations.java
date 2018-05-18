@@ -2,18 +2,19 @@ package web3j.example.web3jdemo.contract.train;
 
 import lombok.Getter;
 import lombok.Setter;
+import org.web3j.crypto.CipherException;
+import org.web3j.crypto.Credentials;
 import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
-import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
+import web3j.example.web3jdemo.blockchain.utils.CredentialsHelper;
+import web3j.example.web3jdemo.contract.operation.AbstractContractTransactionalOperation;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
-import web3j.example.web3jdemo.domain.entity.DldWallet;
 import web3j.example.web3jdemo.service.DldWalletService;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,9 +33,21 @@ public class EnrollManipulations {
     private final Map<Integer, Integer> blocksStatisticsSuccess = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> blocksStatisticsReject = new ConcurrentHashMap<>();
     private final Map<Integer, Integer> blocksStatisticsError = new ConcurrentHashMap<>();
+
+    private final CredentialsHelper credentialsHelper;
     private final DldWalletService dldWalletService;
     private final ContractOperationFactory contractOperationFactory;
+
     private CountDownLatch latch;
+
+    public EnrollManipulations(CredentialsHelper credentialsHelper,
+                               DldWalletService dldWalletService,
+                               ContractOperationFactory contractOperationFactory) {
+        this.credentialsHelper = credentialsHelper;
+        this.dldWalletService = dldWalletService;
+        this.contractOperationFactory = contractOperationFactory;
+    }
+
     Consumer<RegisterDocumentEvent> onRegisterDocumentSuccess = (event) -> {
         synchronized (ConcurrentMap.class) {
             Integer block = event.getReceipt().getBlockNumber().intValue();
@@ -47,6 +60,7 @@ public class EnrollManipulations {
         System.out.println(">> OK ! txType: " + event.getEventResponse().txType + " : " + event.getEventResponse().documentUID);
         if (!isNull(latch)) latch.countDown();
     };
+
     Consumer<RegisterDocumentReceipt> onRegisterDocumentReject = (receipt) -> {
         if (receipt.getException().isPresent()) {
             synchronized (ConcurrentMap.class) {
@@ -72,11 +86,6 @@ public class EnrollManipulations {
         if (!isNull(latch)) latch.countDown();
     };
 
-    public EnrollManipulations(DldWalletService dldWalletService, ContractOperationFactory contractOperationFactory) {
-        this.dldWalletService = dldWalletService;
-        this.contractOperationFactory = contractOperationFactory;
-    }
-
     public void registerDocuments(int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException {
         registerDocuments(1, docCount);
     }
@@ -85,7 +94,7 @@ public class EnrollManipulations {
         latch = new CountDownLatch(docCount);
 
         for (int i = startWalletId; i <= startWalletId + docCount - 1; i++) {
-            registerEnroll(i);
+//            registerEnroll(i);
         }
 
         latch.await();
@@ -97,11 +106,13 @@ public class EnrollManipulations {
         System.out.println("ERROR: " + blocksStatisticsError);
     }
 
-    public void registerOneDocument(int walletId, int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException {
+    public void registerOneDocument(int walletId, int docCount) throws InterruptedException, ExecutionException, TransactionException, IOException, CipherException {
         latch = new CountDownLatch(docCount);
 
+        Credentials senderCredentials = credentialsHelper.getOwnerCredentials();
+
         for (int i = 1; i <= docCount; i++) {
-            registerEnroll(walletId, "doc___" + i);
+            registerEnroll(senderCredentials, walletId, "doc___" + i);
         }
 
         latch.await();
@@ -113,9 +124,10 @@ public class EnrollManipulations {
         System.out.println("ERROR: " + blocksStatisticsError);
     }
 
-    public void registerEnroll(int walletId) throws ExecutionException, InterruptedException, IOException, TransactionException {
+    public void registerEnroll(Credentials senderCredentials, int walletId) throws ExecutionException, InterruptedException, IOException, TransactionException {
 
-        AbstractContractOperation enrollRequestOperation = contractOperationFactory.registerEnrollRequestDocument(
+        AbstractContractTransactionalOperation enrollRequestOperation = contractOperationFactory.registerEnrollRequestDocumentOperation(
+                senderCredentials,
                 dldWalletService.getWalletById(walletId),
                 BigInteger.valueOf(walletId),
                 "doc_" + walletId + '\u241F' + "X",
@@ -127,13 +139,16 @@ public class EnrollManipulations {
 
     }
 
-    public void registerEnroll(int walletId, String doc) throws ExecutionException, InterruptedException, IOException, TransactionException {
+    public void registerEnroll(Credentials senderCredentials, int walletId, String doc) throws ExecutionException, InterruptedException, IOException, TransactionException {
 
-        AbstractContractOperation enrollRequestOperation = contractOperationFactory.registerEnrollRequestDocument(
+        AbstractContractTransactionalOperation enrollRequestOperation = contractOperationFactory.registerEnrollRequestDocumentOperation(
+                senderCredentials,
                 dldWalletService.getWalletById(walletId),
                 BigInteger.valueOf(walletId),
-                doc + '\u241F' + "Y",
-                "{\"invoiceAmount\":" + (walletId * 10) + "}",
+                "doc",
+//                doc + '\u241F' + "Y",
+//                "{\"invoiceAmount\":" + (walletId * 10) + "}",
+                "{}",
                 onRegisterDocumentSuccess,
                 onRegisterDocumentReject);
 
@@ -141,7 +156,7 @@ public class EnrollManipulations {
 
     }
 
-    public void printDocs(int walletId) throws IOException, TransactionException {
+   /* public void printDocs(int walletId) throws IOException, TransactionException {
         DldWallet dldWallet = dldWalletService
                 .getWalletById(walletId);
         List<String> userDocs = contractOperationFactory.getUserDocumentListOperation(dldWallet)
@@ -153,6 +168,6 @@ public class EnrollManipulations {
                     .execute());
         }
         System.out.println((System.nanoTime() - startTime) / 1000000);
-    }
+    }*/
 
 }

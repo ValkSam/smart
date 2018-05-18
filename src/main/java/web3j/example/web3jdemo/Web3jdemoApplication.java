@@ -10,23 +10,20 @@ import org.web3j.crypto.CipherException;
 import org.web3j.protocol.core.DefaultBlockParameter;
 import org.web3j.protocol.core.DefaultBlockParameterName;
 import org.web3j.protocol.core.methods.response.EthBlock;
-import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import rx.functions.Action1;
+import web3j.example.web3jdemo.blockchain.utils.CredentialsHelper;
 import web3j.example.web3jdemo.blockchain.utils.Web3jHelper;
-import web3j.example.web3jdemo.contract.builder.defaultgas.DefaultContractFactory;
-import web3j.example.web3jdemo.contract.operation.AbstractContractOperation;
+import web3j.example.web3jdemo.contract.builder.token.ContractFactory;
 import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
 import web3j.example.web3jdemo.contract.train.EnrollManipulations;
-import web3j.example.web3jdemo.contract.train.UserManipulations;
-import web3j.example.web3jdemo.contract.wrapper.DldContract;
-import web3j.example.web3jdemo.domain.entity.DldWallet;
+import web3j.example.web3jdemo.contract.train.TokenContractRequestsByOwner;
+import web3j.example.web3jdemo.contract.wrapper.token.DltTokenContract;
 import web3j.example.web3jdemo.service.CasinoService;
 import web3j.example.web3jdemo.service.DldWalletService;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static java.lang.String.format;
@@ -40,21 +37,20 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
     private final Web3jHelper web3jHelper;
     private final ContractOperationFactory contractOperationFactory;
-    private final DefaultContractFactory defaultContractFactory;
+    private final ContractFactory tokenContractFactory;
     private final DldWalletService dldWalletService;
     private final CasinoService casinoService;
+    private final CredentialsHelper credentialsHelper;
+
 
     @Autowired
-    public Web3jdemoApplication(Web3jHelper web3jHelper,
-                                ContractOperationFactory contractOperationFactory,
-                                DefaultContractFactory defaultContractFactory,
-                                DldWalletService dldWalletService,
-                                CasinoService casinoService) {
+    public Web3jdemoApplication(Web3jHelper web3jHelper, ContractOperationFactory contractOperationFactory, ContractFactory tokenContractFactory, DldWalletService dldWalletService, CasinoService casinoService, CredentialsHelper credentialsHelper) {
         this.web3jHelper = web3jHelper;
         this.contractOperationFactory = contractOperationFactory;
-        this.defaultContractFactory = defaultContractFactory;
+        this.tokenContractFactory = tokenContractFactory;
         this.dldWalletService = dldWalletService;
         this.casinoService = casinoService;
+        this.credentialsHelper = credentialsHelper;
     }
 
     public static void main(String[] args) {
@@ -70,6 +66,11 @@ public class Web3jdemoApplication implements CommandLineRunner {
     @Override
     public void run(String... args) throws IOException, InterruptedException, TransactionException, CipherException, ExecutionException {
         log.info(format(APP_MESSAGE_PATTERN, web3jHelper.getWeb3ClientVersion()));
+
+        TokenContractRequestsByOwner tokenContractRequestsByOwner = new TokenContractRequestsByOwner(
+                credentialsHelper, contractOperationFactory);
+        tokenContractRequestsByOwner.performReadOnlyRequests();
+
 
 //        listenToEvent(contract, BigInteger.valueOf(64000));
 
@@ -87,14 +88,14 @@ public class Web3jdemoApplication implements CommandLineRunner {
             System.out.println("------------------------------------------------------------------------------------" + tx.getBlockNumber());
         });
 
-        UserManipulations userManipulations = new UserManipulations(dldWalletService, contractOperationFactory);
-        userManipulations.registerAllUsersAndExit(100);
+        /*UserManipulations userManipulations = new UserManipulations(dldWalletService, contractOperationFactory);
+        userManipulations.registerAllUsersAndExit(100);*/
 
-        EnrollManipulations enrollManipulations = new EnrollManipulations(dldWalletService, contractOperationFactory);
+        EnrollManipulations enrollManipulations = new EnrollManipulations(credentialsHelper, dldWalletService, contractOperationFactory);
 //        enrollManipulations.registerDocuments(200);
-        int walletId = 17;
-        enrollManipulations.registerOneDocument(walletId, 10);
-        enrollManipulations.printDocs(walletId);
+        int walletId = 997;
+        enrollManipulations.registerOneDocument(walletId, 1);
+        /*enrollManipulations.printDocs(walletId);*/
 
         System.out.println("===================================");
 
@@ -157,7 +158,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
         }
     }
 
-    private void listenToEvent(DldContract contract, BigInteger blockNumber) {
+    private void listenToEvent(DltTokenContract contract, BigInteger blockNumber) {
         contract.transferEventObservable(
                 DefaultBlockParameter.valueOf(blockNumber),
                 DefaultBlockParameter.valueOf(DefaultBlockParameterName.LATEST.name()))
@@ -168,7 +169,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
                 });
     }
 
-    private void registerCasinoOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
+    /*private void registerCasinoOne() throws ExecutionException, InterruptedException, IOException, TransactionException {
         AbstractContractOperation enrollRequestOperation = contractOperationFactory.registerCasinoOperation(
                 casinoService.getCasinoOne(),
                 "{\"casinoId\":20}");
@@ -176,7 +177,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
         CompletableFuture<TransactionReceipt> receipt = enrollRequestOperation.execute();
         System.out.println(receipt.get());
     }
-
+*/
 
     private void listenToBlocks() {
         Action1<EthBlock> onNext = (block) -> {
@@ -188,7 +189,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
         web3jHelper.listenToBlocks(onNext, 2);
     }
 
-    private void makeStorage() {
+  /*  private void makeStorage() {
         for (int i = 0; i < 1000; i++) {
             DldWallet wallet = web3jHelper.createDldWallet();
             StringBuilder stringBuilder = new StringBuilder();
@@ -204,7 +205,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
             System.out.println(stringBuilder.toString());
         }
     }
-
+*/
     //        DldContract.TransactionEventResponse transactionEventResponse1 = contract.getTransactionEvents(receipt1.get()).get(0);
 //        System.out.println(ConvertHelper.TransactionEventResponseToString(transactionEventResponse1));
 

@@ -9,13 +9,7 @@ public class DldWallet {
 
     private Long id;
 
-    private String addressIndex;
-    private String addressIndexKey;
-
-    private String addressActive;
-    private String addressActiveKey;
-
-    private String addressPassive;
-    private String addressPassiveKey;
+    private String address;
+    private String addressKey;
 
 }
