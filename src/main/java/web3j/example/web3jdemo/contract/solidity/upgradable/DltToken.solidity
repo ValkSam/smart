@@ -114,11 +114,14 @@ contract Token is Erc20Token, eventRegisterAware, eventExchangeAware, eventMintA
     /*public*/
 
     function isLatestVersion() external view
-        returns (bool) {
+        returns (bool)
+    {
         return _storage.isPermittedContractAddress(address(this));
     }
 
-    function checkContractType(ContractType contractType) external pure {
+    function checkContractType(ContractType contractType) external pure
+        returns (bool)
+    {
         require(contractType == ContractType.TOKEN);
     }
 
