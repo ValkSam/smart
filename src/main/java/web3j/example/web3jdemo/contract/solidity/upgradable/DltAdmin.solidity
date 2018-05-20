@@ -41,12 +41,12 @@ contract Admin is typeAware, eventRegisterAware {
     {
         require(!exists(adminAddress));
         _storage.setBool(keccak256(ROOT_KEY, adminAddress), true);
-        _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), adminAddress);
+        uint numberOfAdmins = _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), adminAddress);
 
         emit Register(
             TransactionType.REGISTER_ADMIN,
             adminAddress,
-            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            numberOfAdmins,
             details
         );
     }

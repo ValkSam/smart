@@ -65,7 +65,7 @@ contract User is typeAware, eventRegisterAware {
     {
         require(!exists(userAddress));
         _storage.setBool(keccak256(ROOT_KEY, userAddress), true);
-        _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), userAddress);
+        uint numberOfUsers = _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), userAddress);
 
         _storage.setBool(keccak256(ROOT_KEY, userAddress, '.active'), true);
         _storage.setInt(keccak256(ROOT_KEY, userAddress, '.balance'), 0);
@@ -74,7 +74,7 @@ contract User is typeAware, eventRegisterAware {
         emit Register(
             TransactionType.REGISTER_USER,
             userAddress,
-            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            numberOfUsers,
             details
         );
     }
@@ -139,28 +139,28 @@ contract User is typeAware, eventRegisterAware {
     function addDocument(address userAddress, string documentUID, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
-        returns(bool)
+        returns(uint)
     {
         require(bytes(documentUID).length != 0);
         require(bytes(documentUID).length <= 32);
         require(amount > 0);
         require(!documentExists(userAddress, documentUID));
         _storage.setInt(keccak256(ROOT_KEY, userAddress, '.document.', documentUID), amount);
-        _storage.pushBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
-        return true;
+        uint numberOfUserDocs = _storage.pushBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
+        return numberOfUserDocs;
     }
 
     function removeDocument(address userAddress, string documentUID) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
-        returns(bool)
+        returns(uint)
     {
         require(documentExists(userAddress, documentUID));
         uint idx = _storage.getBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index')).getArrayItemIndex(documentUID.stringToBytes32());
         assert(idx != uint(-1));
         _storage.deleteInt(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
-        _storage.removeBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
-        return true;
+        uint numberOfUserDocs = _storage.removeBytes32Array(keccak256(ROOT_KEY, userAddress, '.document.index'), documentUID.stringToBytes32());
+        return numberOfUserDocs;
     }
 
     /*private section*/

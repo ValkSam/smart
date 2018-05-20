@@ -10,15 +10,15 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
 
     string private PERMITTED_CONTRACT_ROOT_KEY = 'contract.permitted.';
 
-    mapping(bytes32 => uint)    private uIntStorage;
-    mapping(bytes32 => string)     private stringStorage;
-    mapping(bytes32 => address)    private addressStorage;
-    mapping(bytes32 => bytes)      private bytesStorage;
-    mapping(bytes32 => bool)       private boolStorage;
-    mapping(bytes32 => int)     private intStorage;
+    mapping(bytes32 => uint)        private uIntStorage;
+    mapping(bytes32 => string)      private stringStorage;
+    mapping(bytes32 => address)     private addressStorage;
+    mapping(bytes32 => bytes)       private bytesStorage;
+    mapping(bytes32 => bool)        private boolStorage;
+    mapping(bytes32 => int)         private intStorage;
 
-    mapping(bytes32 => address[])  private addressArrayStorage;
-    mapping(bytes32 => bytes32[])  private bytes32ArrayStorage;
+    mapping(bytes32 => address[])   private addressArrayStorage;
+    mapping(bytes32 => bytes32[])   private bytes32ArrayStorage;
 
     constructor() public {
         emit RegisterContract(
@@ -35,7 +35,7 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         require(contractType != ContractType.STORAGE);
         require(contractAddress.call(bytes4(keccak256("checkContractType(uint8)")), contractType));
         address previousRegisteredContractAddress = addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractType)];
-        delete (addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, previousRegisteredContractAddress)]);
+        delete(addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, previousRegisteredContractAddress)]);
         addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractType)] = contractAddress;
         addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractAddress)] = contractAddress;
 
@@ -113,12 +113,18 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         intStorage[key] = value;
     }
 
-    function pushAddressArray(bytes32 key, address value) onlyByLatestPermittedContractVersion external {
+    function pushAddressArray(bytes32 key, address value) onlyByLatestPermittedContractVersion external
+        returns(uint)
+    {
         addressArrayStorage[key].push(value);
+        return addressArrayStorage[key].length;
     }
 
-    function pushBytes32Array(bytes32 key, bytes32 value) onlyByLatestPermittedContractVersion external {
+    function pushBytes32Array(bytes32 key, bytes32 value) onlyByLatestPermittedContractVersion external
+        returns(uint)
+    {
         bytes32ArrayStorage[key].push(value);
+        bytes32ArrayStorage[key].length;
     }
 
     /*Deleter*/
@@ -147,14 +153,20 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         delete intStorage[key];
     }
 
-    function removeAddressArray(bytes32 key, address value) onlyByLatestPermittedContractVersion external {
+    function removeAddressArray(bytes32 key, address value) onlyByLatestPermittedContractVersion external
+        returns(uint)
+    {
         uint idx = addressArrayStorage[key].getArrayItemIndex(value);
         addressArrayStorage[key].removeArrayItem(idx);
+        return addressArrayStorage[key].length;
     }
 
-    function removeBytes32Array(bytes32 key, bytes32 value) onlyByLatestPermittedContractVersion external {
+    function removeBytes32Array(bytes32 key, bytes32 value) onlyByLatestPermittedContractVersion external
+        returns(uint)
+    {
         uint idx = bytes32ArrayStorage[key].getArrayItemIndex(value);
         bytes32ArrayStorage[key].removeArrayItem(idx);
+        return bytes32ArrayStorage[key].length;
     }
 
     /*service*/
@@ -167,9 +179,25 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
     function batchMoveIntValue(bytes32[] keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
         require(keyFrom.length == keyTo.length);
         require(keyTo.length == value.length);
-        for (uint i = 0; i<keyFrom.length; i++) { //.length
+        for (uint i = 0; i<value.length; i++) {
             addIntValue(keyFrom[i], (-value[i]));
             addIntValue(keyTo[i], value[i]);
+        }
+    }
+
+    function batchMoveIntValue(bytes32 keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
+        require(keyTo.length == value.length);
+        for (uint i = 0; i<value.length; i++) {
+            addIntValue(keyFrom, (-value[i]));
+            addIntValue(keyTo[i], value[i]);
+        }
+    }
+
+    function batchMoveIntValue(bytes32[] keyFrom, bytes32 keyTo, int[] value) onlyByLatestPermittedContractVersion external {
+        require(keyFrom.length == value.length);
+        for (uint i = 0; i<value.length; i++) {
+            addIntValue(keyFrom[i], (-value[i]));
+            addIntValue(keyTo, value[i]);
         }
     }
 

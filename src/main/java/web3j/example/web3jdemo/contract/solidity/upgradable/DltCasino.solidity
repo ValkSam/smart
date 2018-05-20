@@ -43,12 +43,12 @@ contract Casino is typeAware, eventRegisterAware {
     {
         require(!exists(casinoAddress));
         _storage.setBool(keccak256(ROOT_KEY, casinoAddress), true);
-        _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), casinoAddress);
+        uint numberOfCasinos = _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), casinoAddress);
 
         emit Register(
             TransactionType.REGISTER_CASINO,
             casinoAddress,
-            _storage.getAddressArray(keccak256(ROOT_KEY, '.index')).length,
+            numberOfCasinos,
             details
         );
     }
