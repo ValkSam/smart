@@ -110,27 +110,41 @@ contract User is typeAware, eventRegisterAware {
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
-        require(exists(userAddress));
         bytes32 key = keccak256(ROOT_KEY, userAddress, '.balance');
-        balanceChange (key, amount);
+        _storage.addIntValue(key, amount);
     }
 
     function balanceReservedChange(address userAddress, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
-        require(exists(userAddress));
         bytes32 key = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
-        balanceChange(key, amount);
+         _storage.addIntValue(key, amount);
     }
+
+    function balanceReserve(address userAddress, int amount) external
+        onlyByLatestTokenContractVersion
+        onlyForActiveUser(userAddress)
+    {
+        bytes32 keyFrom = keccak256(ROOT_KEY, userAddress, '.balance');
+        bytes32 keyTo = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
+        _storage.moveIntValue(keyFrom, keyTo, amount);
+    }
+
+    /*function balanceRestore(address userAddress, int amount) external
+        onlyByLatestTokenContractVersion
+        onlyForActiveUser(userAddress)
+    {
+        bytes32 keyFrom = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
+        bytes32 keyTo = keccak256(ROOT_KEY, userAddress, '.balance');
+        _storage.moveIntValue(keyFrom, keyTo, amount);
+    }*/
 
     function balanceMove(address userAddressFrom, address userAddressTo, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddressFrom)
         onlyForActiveUser(userAddressTo)
     {
-        require(exists(userAddressFrom));
-        require(exists(userAddressTo));
         bytes32 keyFrom = keccak256(ROOT_KEY, userAddressFrom, '.balance');
         bytes32 keyTo = keccak256(ROOT_KEY, userAddressTo, '.balance');
         _storage.moveIntValue(keyFrom, keyTo, amount);
@@ -164,14 +178,6 @@ contract User is typeAware, eventRegisterAware {
     }
 
     /*private section*/
-
-    function balanceChange(bytes32 key, int amount) private {
-        require(amount != 0);
-        int currentBalance = _storage.getInt(key);
-        int newBalance = currentBalance + amount;
-        require(newBalance >= 0);
-        _storage.setInt(key, newBalance);
-    }
 
     function exists(address _address) private view returns(bool){
         return _storage.getBool(keccak256(ROOT_KEY, _address));
@@ -211,6 +217,5 @@ contract User is typeAware, eventRegisterAware {
         require(_storage.getPermittedContractAddress(ContractType.TOKEN) == msg.sender);
         _;
     }
-
 
 }

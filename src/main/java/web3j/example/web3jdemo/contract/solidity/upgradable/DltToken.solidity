@@ -81,9 +81,6 @@ contract Erc20Token is BaseToken, eventTransferAware {
 
         User user = getUserContract();
 
-        // user.balanceChange(_from, (-amount)); //!!! delete
-        // user.balanceChange(_to, amount);
-
         user.balanceMove(_from, _to, amount);
 
         emit Transfer(
@@ -163,8 +160,7 @@ contract Token is Erc20Token, eventRegisterAware, eventExchangeAware, eventMintA
     {
         User user = getUserContract();
         user.addDocument(userAddress, documentUID, amount);
-        user.balanceChange(userAddress, (-amount));
-        user.balanceReservedChange(userAddress, amount);
+        user.balanceReserve(userAddress, amount);
 
         emit RegisterDocument(
             TransactionType.WITHDRAW_REQUEST,
@@ -268,6 +264,5 @@ contract Token is Erc20Token, eventRegisterAware, eventExchangeAware, eventMintA
     function setTotalSupply(int amount) private {
         _storage.setInt(TOTAL_SYPPLY_KEY_HASH, amount);
     }
-
 
 }
