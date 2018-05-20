@@ -157,6 +157,30 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         bytes32ArrayStorage[key].removeArrayItem(idx);
     }
 
+    /*service*/
+
+    function moveIntValue(bytes32 keyFrom, bytes32 keyTo, int value) onlyByLatestPermittedContractVersion external {
+        addIntValue(keyFrom, (-value));
+        addIntValue(keyTo, value);
+    }
+
+    function batchMoveIntValue(bytes32[] keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
+        require(keyFrom.length == keyTo.length);
+        require(keyTo.length == value.length);
+        for (uint i = 0; i<keyFrom.length; i++) { //.length
+            addIntValue(keyFrom[i], (-value[i]));
+            addIntValue(keyTo[i], value[i]);
+        }
+    }
+
+    function addIntValue(bytes32 key, int value) onlyByLatestPermittedContractVersion public {
+        require(value != 0);
+        int currentValue = intStorage[key];
+        int newValue = currentValue + value;
+        require(newValue >= 0);
+        intStorage[key] = newValue;
+    }
+
     /*Modifier*/
 
     modifier onlyByLatestPermittedContractVersion() {

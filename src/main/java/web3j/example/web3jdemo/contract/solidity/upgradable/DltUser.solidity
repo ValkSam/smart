@@ -37,8 +37,11 @@ contract User is typeAware, eventRegisterAware {
         return active(userAddress);
     }
 
-    function checkContractType(ContractType contractType) external pure {
+    function checkContractType(ContractType contractType) external pure
+        returns (bool)
+    {
         require(contractType == ContractType.USER);
+        return true;
     }
 
     function balanceOf(address userAddress) external view
@@ -119,6 +122,18 @@ contract User is typeAware, eventRegisterAware {
         require(exists(userAddress));
         bytes32 key = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
         balanceChange(key, amount);
+    }
+
+    function balanceMove(address userAddressFrom, address userAddressTo, int amount) external
+        onlyByLatestTokenContractVersion
+        onlyForActiveUser(userAddressFrom)
+        onlyForActiveUser(userAddressTo)
+    {
+        require(exists(userAddressFrom));
+        require(exists(userAddressTo));
+        bytes32 keyFrom = keccak256(ROOT_KEY, userAddressFrom, '.balance');
+        bytes32 keyTo = keccak256(ROOT_KEY, userAddressTo, '.balance');
+        _storage.moveIntValue(keyFrom, keyTo, amount);
     }
 
     function addDocument(address userAddress, string documentUID, int amount) external

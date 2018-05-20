@@ -81,8 +81,10 @@ contract Erc20Token is BaseToken, eventTransferAware {
 
         User user = getUserContract();
 
-        user.balanceChange(_from, (-amount));
-        user.balanceChange(_to, amount);
+        // user.balanceChange(_from, (-amount)); //!!! delete
+        // user.balanceChange(_to, amount);
+
+        user.balanceMove(_from, _to, amount);
 
         emit Transfer(
             _from,
@@ -123,6 +125,7 @@ contract Token is Erc20Token, eventRegisterAware, eventExchangeAware, eventMintA
         returns (bool)
     {
         require(contractType == ContractType.TOKEN);
+        return true;
     }
 
     /*admin permissions*/

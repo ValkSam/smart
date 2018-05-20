@@ -27,8 +27,11 @@ contract Admin is typeAware, eventRegisterAware {
         return _storage.getBool(keccak256(ROOT_KEY, _address));
     }
 
-    function checkContractType(ContractType contractType) external pure {
+    function checkContractType(ContractType contractType) external pure
+        returns (bool)
+    {
         require(contractType == ContractType.ADMIN);
+        return true;
     }
 
     /*owner permissions*/

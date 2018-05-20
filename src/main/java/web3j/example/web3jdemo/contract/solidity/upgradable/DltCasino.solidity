@@ -29,8 +29,11 @@ contract Casino is typeAware, eventRegisterAware {
         return exists(_address);
     }
 
-    function checkContractType(ContractType contractType) external pure {
+    function checkContractType(ContractType contractType) external pure
+        returns (bool)
+    {
         require(contractType == ContractType.CASINO);
+        return true;
     }
 
     /*admin permission*/
