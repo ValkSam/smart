@@ -127,7 +127,7 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         bytes32ArrayStorage[key].length;
     }
 
-    /*Deleter*/
+    /*Delete*/
 
     function deleteAddress(bytes32 key) onlyByLatestPermittedContractVersion external {
         delete addressStorage[key];
@@ -171,34 +171,9 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
 
     /*service*/
 
-    function moveIntValue(bytes32 keyFrom, bytes32 keyTo, int value) onlyByLatestPermittedContractVersion external {
+    function moveIntValue(bytes32 keyFrom, bytes32 keyTo, int value) onlyByLatestPermittedContractVersion public {
         addIntValue(keyFrom, (-value));
         addIntValue(keyTo, value);
-    }
-
-    function batchMoveIntValue(bytes32[] keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
-        require(keyFrom.length == keyTo.length);
-        require(keyTo.length == value.length);
-        for (uint i = 0; i<value.length; i++) {
-            addIntValue(keyFrom[i], (-value[i]));
-            addIntValue(keyTo[i], value[i]);
-        }
-    }
-
-    function batchMoveIntValue(bytes32 keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
-        require(keyTo.length == value.length);
-        for (uint i = 0; i<value.length; i++) {
-            addIntValue(keyFrom, (-value[i]));
-            addIntValue(keyTo[i], value[i]);
-        }
-    }
-
-    function batchMoveIntValue(bytes32[] keyFrom, bytes32 keyTo, int[] value) onlyByLatestPermittedContractVersion external {
-        require(keyFrom.length == value.length);
-        for (uint i = 0; i<value.length; i++) {
-            addIntValue(keyFrom[i], (-value[i]));
-            addIntValue(keyTo, value[i]);
-        }
     }
 
     function addIntValue(bytes32 key, int value) onlyByLatestPermittedContractVersion public {
@@ -207,6 +182,28 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         int newValue = currentValue + value;
         require(newValue >= 0);
         intStorage[key] = newValue;
+    }
+
+    function batchMoveIntValue(bytes32[] keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
+        require(keyFrom.length == keyTo.length);
+        require(keyTo.length == value.length);
+        for (uint i = 0; i<value.length; i++) {
+            moveIntValue(keyFrom[i], keyTo[i], value[i]);
+        }
+    }
+
+    function batchMoveIntValue(bytes32 keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
+        require(keyTo.length == value.length);
+        for (uint i = 0; i<value.length; i++) {
+           moveIntValue(keyFrom, keyTo[i], value[i]);
+        }
+    }
+
+    function batchMoveIntValue(bytes32[] keyFrom, bytes32 keyTo, int[] value) onlyByLatestPermittedContractVersion external {
+        require(keyFrom.length == value.length);
+        for (uint i = 0; i<value.length; i++) {
+            moveIntValue(keyFrom[i], keyTo, value[i]);
+        }
     }
 
     /*Modifier*/
