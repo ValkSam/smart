@@ -24,7 +24,8 @@ library Arrays {
 
         bytes32 valueToSearch = keccak256(value);
 
-        for (uint i = 0; i<self.length; i++){
+        uint len = self.length;
+        for (uint i = 0; i < len; i++){
             if (keccak256(self[i]) == valueToSearch){
                 return i;
                 break;
@@ -36,7 +37,8 @@ library Arrays {
 
     function getArrayItemIndex(bytes32[] memory self, bytes32 value) public pure returns (uint){
 
-        for (uint i = 0; i<self.length; i++){
+        uint len = self.length;
+        for (uint i = 0; i < len; i++){
             if (self[i] == value){
                 return i;
                 break;

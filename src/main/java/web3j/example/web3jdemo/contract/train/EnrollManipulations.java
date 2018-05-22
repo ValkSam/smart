@@ -111,7 +111,7 @@ public class EnrollManipulations {
 
         Credentials senderCredentials = credentialsHelper.getOwnerCredentials();
 
-        for (int i = 1+100; i <= docCount+100; i++) {
+        for (int i = 1; i <= docCount; i++) {
             registerEnroll(senderCredentials, walletId, "doc___" + i);
         }
 

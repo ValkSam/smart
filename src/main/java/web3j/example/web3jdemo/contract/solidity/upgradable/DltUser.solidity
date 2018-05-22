@@ -5,12 +5,16 @@ import "browser/DltAdmin.sol";
 import "browser/Libs.sol";
 import "browser/Events.sol";
 
+// 4,272,772
 contract User is typeAware, eventRegisterAware {
 
     using Arrays for bytes32[];
     using Strings for string;
 
-    string private ROOT_KEY = 'user.';
+    string public ROOT_KEY = 'user.';
+    string public ACTIVE_SUFFIX_KEY = '.active';
+    string public BALANCE_SUFFIX_KEY = '.balance';
+    string public BALANCE_RESERVED_SUFFIX_KEY = '.balance.reserved';
 
     Storage private _storage;
 
@@ -48,52 +52,17 @@ contract User is typeAware, eventRegisterAware {
         returns(int)
     {
         require(exists(userAddress));
-        return _storage.getInt(keccak256(ROOT_KEY, userAddress, '.balance'));
+        return _storage.getInt(keccak256(ROOT_KEY, userAddress, BALANCE_SUFFIX_KEY));
     }
 
     function balanceReservedOf(address userAddress) external view
         returns(int)
     {
         require(exists(userAddress));
-        return _storage.getInt(keccak256(ROOT_KEY, userAddress, '.balance.reserved'));
+        return _storage.getInt(keccak256(ROOT_KEY, userAddress, BALANCE_RESERVED_SUFFIX_KEY));
     }
 
-    /*admin permission*/
-
-    function register(address userAddress, string details) external
-        onlyByAdmin
-    {
-        require(!exists(userAddress));
-        _storage.setBool(keccak256(ROOT_KEY, userAddress), true);
-        uint numberOfUsers = _storage.pushAddressArray(keccak256(ROOT_KEY, '.index'), userAddress);
-
-        _storage.setBool(keccak256(ROOT_KEY, userAddress, '.active'), true);
-        _storage.setInt(keccak256(ROOT_KEY, userAddress, '.balance'), 0);
-        _storage.setInt(keccak256(ROOT_KEY, userAddress, '.balance.reserved'), 0);
-
-        emit Register(
-            TransactionType.REGISTER_USER,
-            userAddress,
-            numberOfUsers,
-            details
-        );
-    }
-
-    function activate(address userAddress) external
-        returns(bool)
-    {
-        setActive(userAddress, true);
-        return true;
-    }
-
-    function deActivate(address userAddress) external
-        returns(bool)
-    {
-        setActive(userAddress, false);
-        return true;
-    }
-
-    function documentAmount(address userAddress, string documentUID) external view
+   function documentAmount(address userAddress, string documentUID) external view
         returns(int){
         return _storage.getInt(keccak256(ROOT_KEY, userAddress, '.document.', documentUID));
     }
@@ -110,7 +79,7 @@ contract User is typeAware, eventRegisterAware {
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
-        bytes32 key = keccak256(ROOT_KEY, userAddress, '.balance');
+        bytes32 key = keccak256(ROOT_KEY, userAddress, BALANCE_SUFFIX_KEY);
         _storage.addIntValue(key, amount);
     }
 
@@ -118,7 +87,7 @@ contract User is typeAware, eventRegisterAware {
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
-        bytes32 key = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
+        bytes32 key = keccak256(ROOT_KEY, userAddress, BALANCE_RESERVED_SUFFIX_KEY);
          _storage.addIntValue(key, amount);
     }
 
@@ -126,27 +95,27 @@ contract User is typeAware, eventRegisterAware {
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
-        bytes32 keyFrom = keccak256(ROOT_KEY, userAddress, '.balance');
-        bytes32 keyTo = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
+        bytes32 keyFrom = keccak256(ROOT_KEY, userAddress, BALANCE_SUFFIX_KEY);
+        bytes32 keyTo = keccak256(ROOT_KEY, userAddress, BALANCE_RESERVED_SUFFIX_KEY);
         _storage.moveIntValue(keyFrom, keyTo, amount);
     }
 
-    /*function balanceRestore(address userAddress, int amount) external
+    function balanceRestore(address userAddress, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddress)
     {
-        bytes32 keyFrom = keccak256(ROOT_KEY, userAddress, '.balance.reserved');
-        bytes32 keyTo = keccak256(ROOT_KEY, userAddress, '.balance');
+        bytes32 keyFrom = keccak256(ROOT_KEY, userAddress, BALANCE_RESERVED_SUFFIX_KEY);
+        bytes32 keyTo = keccak256(ROOT_KEY, userAddress, BALANCE_SUFFIX_KEY);
         _storage.moveIntValue(keyFrom, keyTo, amount);
-    }*/
+    }
 
     function balanceMove(address userAddressFrom, address userAddressTo, int amount) external
         onlyByLatestTokenContractVersion
         onlyForActiveUser(userAddressFrom)
         onlyForActiveUser(userAddressTo)
     {
-        bytes32 keyFrom = keccak256(ROOT_KEY, userAddressFrom, '.balance');
-        bytes32 keyTo = keccak256(ROOT_KEY, userAddressTo, '.balance');
+        bytes32 keyFrom = keccak256(ROOT_KEY, userAddressFrom, BALANCE_SUFFIX_KEY);
+        bytes32 keyTo = keccak256(ROOT_KEY, userAddressTo, BALANCE_SUFFIX_KEY);
         _storage.moveIntValue(keyFrom, keyTo, amount);
     }
 
@@ -184,13 +153,7 @@ contract User is typeAware, eventRegisterAware {
     }
 
     function active(address userAddress) private view returns(bool){
-        return _storage.getBool(keccak256(ROOT_KEY, userAddress, '.active'));
-    }
-
-    function setActive(address userAddress, bool value) private
-        onlyByAdmin
-    {
-        _storage.setBool(keccak256(ROOT_KEY, userAddress, '.active'), value);
+        return _storage.getBool(keccak256(ROOT_KEY, userAddress, ACTIVE_SUFFIX_KEY));
     }
 
     function documentExists(address userAddress, string documentUID) private view returns(bool) {
@@ -198,15 +161,6 @@ contract User is typeAware, eventRegisterAware {
     }
 
     /*Modifier*/
-
-    modifier onlyByAdmin() {
-        if (msg.sender != _storage.owner()) {
-            address adminAddress = _storage.getPermittedContractAddress(ContractType.ADMIN);
-            Admin admin = Admin(adminAddress);
-            require (admin.isAdmin(msg.sender));
-        }
-        _;
-    }
 
     modifier onlyForActiveUser(address indexAddress) {
         require (active(indexAddress));

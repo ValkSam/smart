@@ -7,7 +7,7 @@ contract typeAware {
     }
 
     enum ContractType {
-        STORAGE, ADMIN, CASINO, USER, TOKEN
+        STORAGE, ADMIN, CASINO, USER, TOKEN, CONTRACT_REGISTRATOR, USER_REGISTRATOR
     }
 
 }

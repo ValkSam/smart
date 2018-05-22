@@ -3,47 +3,33 @@ pragma solidity 0.4.23;
 import "browser/Libs.sol";
 import "browser/DltOwner.sol";
 
-contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
+// 4,563,542
+contract Storage is Owner, eventRegisterContractAware {
 
     using Arrays for address[];
     using Arrays for bytes32[];
 
-    string private PERMITTED_CONTRACT_ROOT_KEY = 'contract.permitted.';
+    string public PERMITTED_CONTRACT_ROOT_KEY = 'contract.permitted.';
 
     mapping(bytes32 => uint)        private uIntStorage;
-    mapping(bytes32 => string)      private stringStorage;
     mapping(bytes32 => address)     private addressStorage;
-    mapping(bytes32 => bytes)       private bytesStorage;
     mapping(bytes32 => bool)        private boolStorage;
     mapping(bytes32 => int)         private intStorage;
 
     mapping(bytes32 => address[])   private addressArrayStorage;
     mapping(bytes32 => bytes32[])   private bytes32ArrayStorage;
 
-    constructor() public {
+    constructor(address contractRegistratorAddress) public {
+        require(contractRegistratorAddress != address(0x0));
+        addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, ContractType.CONTRACT_REGISTRATOR)] = contractRegistratorAddress;
+        addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractRegistratorAddress)] = contractRegistratorAddress;
         emit RegisterContract(
             ContractType.STORAGE,
             address(0x0),
             address(this));
     }
 
-    /*Contract registerer*/
-
-    function registerPermittedContract(ContractType contractType, address contractAddress) external
-        onlyByOwner
-    {
-        require(contractType != ContractType.STORAGE);
-        require(contractAddress.call(bytes4(keccak256("checkContractType(uint8)")), contractType));
-        address previousRegisteredContractAddress = addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractType)];
-        delete(addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, previousRegisteredContractAddress)]);
-        addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractType)] = contractAddress;
-        addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractAddress)] = contractAddress;
-
-        emit RegisterContract(
-            contractType,
-            previousRegisteredContractAddress,
-            contractAddress);
-    }
+    /*public*/
 
     function getPermittedContractAddress(ContractType contractType) external view returns (address) {
         return addressStorage[keccak256(PERMITTED_CONTRACT_ROOT_KEY, contractType)];
@@ -61,14 +47,6 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
 
     function getUint(bytes32 key) external view returns (uint) {
         return uIntStorage[key];
-    }
-
-    function getString(bytes32 key) external view returns (string) {
-        return stringStorage[key];
-    }
-
-    function getBytes(bytes32 key) external view returns (bytes) {
-        return bytesStorage[key];
     }
 
     function getBool(bytes32 _key) external view returns (bool) {
@@ -97,14 +75,6 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         uIntStorage[key] = value;
     }
 
-    function setString(bytes32 key, string value) onlyByLatestPermittedContractVersion external {
-        stringStorage[key] = value;
-    }
-
-    function setBytes(bytes32 key, bytes value) onlyByLatestPermittedContractVersion external {
-        bytesStorage[key] = value;
-    }
-
     function setBool(bytes32 key, bool value) onlyByLatestPermittedContractVersion external {
         boolStorage[key] = value;
     }
@@ -116,33 +86,23 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
     function pushAddressArray(bytes32 key, address value) onlyByLatestPermittedContractVersion external
         returns(uint)
     {
-        addressArrayStorage[key].push(value);
-        return addressArrayStorage[key].length;
+        return addressArrayStorage[key].push(value);
     }
 
     function pushBytes32Array(bytes32 key, bytes32 value) onlyByLatestPermittedContractVersion external
         returns(uint)
     {
-        bytes32ArrayStorage[key].push(value);
-        bytes32ArrayStorage[key].length;
+        return bytes32ArrayStorage[key].push(value);
     }
 
     /*Delete*/
 
-    function deleteAddress(bytes32 key) onlyByLatestPermittedContractVersion external {
+    function deleteAddress(bytes32 key)  onlyByLatestPermittedContractVersion external {
         delete addressStorage[key];
     }
 
     function deleteUint(bytes32 key) onlyByLatestPermittedContractVersion external {
         delete uIntStorage[key];
-    }
-
-    function deleteString(bytes32 key) onlyByLatestPermittedContractVersion external {
-        delete stringStorage[key];
-    }
-
-    function deleteBytes(bytes32 key) onlyByLatestPermittedContractVersion external {
-        delete bytesStorage[key];
     }
 
     function deleteBool(bytes32 key) onlyByLatestPermittedContractVersion external {
@@ -184,6 +144,38 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         intStorage[key] = newValue;
     }
 
+    /*service.batch*/
+
+    /*service.batch.uint*/
+
+    function batchSetUintValue(bytes32[] key, uint[] value) onlyByLatestPermittedContractVersion external {
+        require(key.length == value.length);
+        for (uint i = 0; i<key.length; i++) {
+            uIntStorage[key[i]] = value[i];
+        }
+    }
+
+    function batchSetUintValue(bytes32[] key, uint value) onlyByLatestPermittedContractVersion external {
+        for (uint i = 0; i<key.length; i++) {
+            uIntStorage[key[i]] = value;
+        }
+    }
+
+    /*service.batch.int*/
+
+    function batchSetIntValue(bytes32[] key, int[] value) onlyByLatestPermittedContractVersion external {
+        require(key.length == value.length);
+        for (uint i = 0; i<key.length; i++) {
+            intStorage[key[i]] = value[i];
+        }
+    }
+
+    function batchSetIntValue(bytes32[] key, int value) onlyByLatestPermittedContractVersion external {
+        for (uint i = 0; i<key.length; i++) {
+            intStorage[key[i]] = value;
+        }
+    }
+
     function batchMoveIntValue(bytes32[] keyFrom, bytes32[] keyTo, int[] value) onlyByLatestPermittedContractVersion external {
         require(keyFrom.length == keyTo.length);
         require(keyTo.length == value.length);
@@ -203,6 +195,42 @@ contract Storage is Owner, eventRegisterContractAware, eventRegisterAware {
         require(keyFrom.length == value.length);
         for (uint i = 0; i<value.length; i++) {
             moveIntValue(keyFrom[i], keyTo, value[i]);
+        }
+    }
+
+    /*service.batch.bool*/
+
+    function batchFindFirst(bytes32[] key, bool value) view onlyByLatestPermittedContractVersion external
+        returns(bytes32)
+    {
+        for (uint i = 0; i<key.length; i++) {
+            if (boolStorage[key[i]] == value) {
+                return key[i];
+            }
+        }
+        return bytes32(0);
+    }
+
+    function batchSetBoolValue(bytes32[] key, bool[] value) onlyByLatestPermittedContractVersion external {
+        require(key.length == value.length);
+        for (uint i = 0; i<key.length; i++) {
+            boolStorage[key[i]] = value[i];
+        }
+    }
+
+    function batchSetBoolValue(bytes32[] key, bool value) onlyByLatestPermittedContractVersion external {
+        for (uint i = 0; i<key.length; i++) {
+            boolStorage[key[i]] = value;
+        }
+    }
+
+    /*service.batch.pushToArray*/
+
+    function batchPushAddressArray(bytes32 key, address[] value) onlyByLatestPermittedContractVersion external
+        returns(uint)
+    {
+        for (uint i = 0; i<value.length; i++) {
+            return addressArrayStorage[key].push(value[i]);
         }
     }
 
