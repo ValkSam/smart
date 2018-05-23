@@ -15,7 +15,9 @@ import rx.functions.Action1;
 import web3j.example.web3jdemo.blockchain.utils.CredentialsHelper;
 import web3j.example.web3jdemo.blockchain.utils.Web3jHelper;
 import web3j.example.web3jdemo.contract.builder.token.ContractFactory;
-import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
+import web3j.example.web3jdemo.contract.operation.admin.AdminContractOperationFactory;
+import web3j.example.web3jdemo.contract.operation.token.TokenContractOperationFactory;
+import web3j.example.web3jdemo.contract.train.AdminManipulations;
 import web3j.example.web3jdemo.contract.train.EnrollManipulations;
 import web3j.example.web3jdemo.contract.train.TokenContractRequestsByOwner;
 import web3j.example.web3jdemo.contract.wrapper.token.DltTokenContract;
@@ -36,7 +38,8 @@ public class Web3jdemoApplication implements CommandLineRunner {
     private final String APP_MESSAGE_PATTERN = "\n\tAPP: %s";
 
     private final Web3jHelper web3jHelper;
-    private final ContractOperationFactory contractOperationFactory;
+    private final TokenContractOperationFactory tokenContractOperationFactory;
+    private final AdminContractOperationFactory adminContractOperationFactory;
     private final ContractFactory tokenContractFactory;
     private final DldWalletService dldWalletService;
     private final CasinoService casinoService;
@@ -44,9 +47,13 @@ public class Web3jdemoApplication implements CommandLineRunner {
 
 
     @Autowired
-    public Web3jdemoApplication(Web3jHelper web3jHelper, ContractOperationFactory contractOperationFactory, ContractFactory tokenContractFactory, DldWalletService dldWalletService, CasinoService casinoService, CredentialsHelper credentialsHelper) {
+    public Web3jdemoApplication(Web3jHelper web3jHelper,
+                                TokenContractOperationFactory tokenContractOperationFactory,
+                                AdminContractOperationFactory adminContractOperationFactory,
+                                ContractFactory tokenContractFactory, DldWalletService dldWalletService, CasinoService casinoService, CredentialsHelper credentialsHelper) {
         this.web3jHelper = web3jHelper;
-        this.contractOperationFactory = contractOperationFactory;
+        this.tokenContractOperationFactory = tokenContractOperationFactory;
+        this.adminContractOperationFactory = adminContractOperationFactory;
         this.tokenContractFactory = tokenContractFactory;
         this.dldWalletService = dldWalletService;
         this.casinoService = casinoService;
@@ -68,7 +75,7 @@ public class Web3jdemoApplication implements CommandLineRunner {
         log.info(format(APP_MESSAGE_PATTERN, web3jHelper.getWeb3ClientVersion()));
 
         TokenContractRequestsByOwner tokenContractRequestsByOwner = new TokenContractRequestsByOwner(
-                credentialsHelper, contractOperationFactory);
+                credentialsHelper, tokenContractOperationFactory);
         tokenContractRequestsByOwner.performReadOnlyRequests();
 
 
@@ -88,14 +95,15 @@ public class Web3jdemoApplication implements CommandLineRunner {
             System.out.println("------------------------------------------------------------------------------------" + tx.getBlockNumber());
         });
 
-        /*UserManipulations userManipulations = new UserManipulations(dldWalletService, contractOperationFactory);
-        userManipulations.registerAllUsersAndExit(100);*/
+        AdminManipulations adminManipulations = new AdminManipulations(credentialsHelper, dldWalletService, adminContractOperationFactory);
+        int adminWalletId = 10 + 1;
+        adminManipulations.registerAdmins(adminWalletId, 2);
 
-        EnrollManipulations enrollManipulations = new EnrollManipulations(credentialsHelper, dldWalletService, contractOperationFactory);
+        EnrollManipulations enrollManipulations = new EnrollManipulations(credentialsHelper, dldWalletService, tokenContractOperationFactory);
 //        enrollManipulations.registerDocuments(200);
         int walletId = 997;
-//        enrollManipulations.registerDocumentsForOneUser(walletId, 60);
-        enrollManipulations.cancelDocumentsForOneUser(walletId, 60);
+//        enrollManipulations.registerDocumentsForOneUser(walletId, 10);
+//        enrollManipulations.cancelDocumentsForOneUser(walletId, 10);
         /*enrollManipulations.printDocs(walletId);*/
 
         System.out.println("===================================");

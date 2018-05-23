@@ -20,16 +20,19 @@ import static web3j.example.web3jdemo.contract.operation.actiontype.TokenContrac
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class RegisterEnrollRequestDocumentOperation extends AbstractTokenContractUserDocumentOperation {
+public class RegisterEnrollRequestDocumentOperation extends AbstractTokenContractRegisterDocumentOperation {
 
     private static final TokenContractActionType ACTION_TYPE = REGISTER_ENROLL_DOCUMENT;
+
+    private final BigInteger amount;
 
     public RegisterEnrollRequestDocumentOperation(Credentials senderCredentials,
                                                   DldWallet userWallet,
                                                   BigInteger amount,
                                                   String documentUid,
                                                   String data) {
-        super(senderCredentials, ACTION_TYPE, userWallet, amount, documentUid, data);
+        super(senderCredentials, ACTION_TYPE, userWallet, documentUid, data);
+        this.amount = amount;
     }
 
     public RegisterEnrollRequestDocumentOperation(Credentials senderCredentials,
@@ -39,7 +42,8 @@ public class RegisterEnrollRequestDocumentOperation extends AbstractTokenContrac
                                                   String data,
                                                   Consumer<RegisterDocumentEvent> onSuccess,
                                                   Consumer<RegisterDocumentReceipt> onReject) {
-        super(senderCredentials, ACTION_TYPE, userWallet, amount, documentUid, data, onSuccess, onReject);
+        super(senderCredentials, ACTION_TYPE, userWallet, documentUid, data, onSuccess, onReject);
+        this.amount = amount;
     }
 
     @Override

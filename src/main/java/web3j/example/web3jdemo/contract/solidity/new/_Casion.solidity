@@ -1,0 +1,125 @@
+pragma solidity ^0.4.23;
+
+import 'browser/_Ownable.sol';
+import 'browser/_SafeMath.sol';
+
+contract ERC20Basic {
+  function totalSupply() public view returns (uint256);
+  function balanceOf(address who) public view returns (uint256);
+//   function transfer(address to, uint256 value) public returns (bool);
+  event Transfer(address indexed from, address indexed to, uint256 value);
+}
+
+
+contract ERC20 is ERC20Basic {
+  /*function allowance(address owner, address spender)
+    public view returns (uint256);*/
+
+//   function transferFrom(address from, address to, uint256 value)
+    // public returns (bool);
+
+//   function approve(address spender, uint256 value) public returns (bool);
+
+  event Approval(
+    address indexed owner,
+    address indexed spender,
+    uint256 value
+  );
+
+}
+
+contract Casion is Ownable, ERC20 {
+    using SafeMath for uint256;
+
+    uint256 totalSupply_;
+
+    uint32 private adminReservedTypeBound = 1000;
+    uint32 private casinoReservedTypeBound = 2000;
+
+    struct LinkedUserData {
+        address prev;
+        address next;
+        bool    active;
+        uint32  userType;
+        uint256 balance;
+        uint256 balanceReserved;
+    }
+
+    address private lastUserAddress;
+    mapping(address => LinkedUserData) private users;
+
+    event Test (
+        string name,
+        address prev,
+        address next,
+        uint32 userType
+        );
+
+    function registerUser(address _address, uint32 userType)
+        onlyAdmin
+        external
+    {
+        require(_address != address(0x0));
+        require(userType > casinoReservedTypeBound);
+        require(users[_address].userType == 0 );
+        address prev = address(0x0);
+        if (lastUserAddress != 0x0) {
+            prev = lastUserAddress;
+            users[lastUserAddress].next = _address;
+            emit Test(
+                    "prev",
+                    users[lastUserAddress].prev,
+                    users[lastUserAddress].next,
+                    users[lastUserAddress].userType
+            );
+        }
+        users[_address] = LinkedUserData(
+            prev,
+            address(0x0),
+            true,
+            userType,
+            0,
+            0);
+
+        lastUserAddress = _address;
+        emit Test(
+            "last",
+            users[_address].prev,
+            users[_address].next,
+            users[_address].userType
+        );
+    }
+
+    function totalSupply() public view returns (uint256) {
+        return totalSupply_;
+    }
+
+    function balanceOf(address _address) public view returns (uint256) {
+        return users[_address].balance;
+    }
+
+    function transferFrom(address _from, address _to, int amount, string details) external
+        onlyAdmin
+    {
+        // transferFromTo(_from, _to, amount, details);
+    }
+
+
+    /*modifier*/
+
+    modifier onlyAdmin() {
+        if (msg.sender != owner) {
+            require (users[msg.sender].userType <= adminReservedTypeBound);
+        }
+        _;
+    }
+
+    modifier onlyCasino() {
+        if (msg.sender != owner) {
+            require (  users[msg.sender].userType > adminReservedTypeBound
+                    && users[msg.sender].userType <= casinoReservedTypeBound);
+        }
+        _;
+    }
+
+}

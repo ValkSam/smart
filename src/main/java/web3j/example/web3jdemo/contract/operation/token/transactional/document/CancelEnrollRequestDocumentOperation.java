@@ -17,20 +17,22 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static web3j.example.web3jdemo.contract.operation.actiontype.TokenContractActionType.CANCEL_ENROLL_DOCUMENT;
-import static web3j.example.web3jdemo.contract.operation.actiontype.TokenContractActionType.REGISTER_ENROLL_DOCUMENT;
 
 @Component
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class CancelEnrollRequestDocumentOperation extends AbstractTokenContractUserDocumentOperation {
+public class CancelEnrollRequestDocumentOperation extends AbstractTokenContractRegisterDocumentOperation {
 
     private static final TokenContractActionType ACTION_TYPE = CANCEL_ENROLL_DOCUMENT;
+
+    private final BigInteger amount;
 
     public CancelEnrollRequestDocumentOperation(Credentials senderCredentials,
                                                 DldWallet userWallet,
                                                 BigInteger amount,
                                                 String documentUid,
                                                 String data) {
-        super(senderCredentials, ACTION_TYPE, userWallet, amount, documentUid, data);
+        super(senderCredentials, ACTION_TYPE, userWallet, documentUid, data);
+        this.amount = amount;
     }
 
     public CancelEnrollRequestDocumentOperation(Credentials senderCredentials,
@@ -40,7 +42,8 @@ public class CancelEnrollRequestDocumentOperation extends AbstractTokenContractU
                                                 String data,
                                                 Consumer<RegisterDocumentEvent> onSuccess,
                                                 Consumer<RegisterDocumentReceipt> onReject) {
-        super(senderCredentials, ACTION_TYPE, userWallet, amount, documentUid, data, onSuccess, onReject);
+        super(senderCredentials, ACTION_TYPE, userWallet, documentUid, data, onSuccess, onReject);
+        this.amount = amount;
     }
 
     @Override

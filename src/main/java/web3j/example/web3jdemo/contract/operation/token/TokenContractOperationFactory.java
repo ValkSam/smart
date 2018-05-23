@@ -1,4 +1,4 @@
-package web3j.example.web3jdemo.contract.operation;
+package web3j.example.web3jdemo.contract.operation.token;
 
 import org.springframework.beans.factory.annotation.Lookup;
 import org.springframework.stereotype.Component;
@@ -21,81 +21,7 @@ import java.math.BigInteger;
 import java.util.function.Consumer;
 
 @Component
-public abstract class ContractOperationFactory {
-
-    /*
-
-    @Lookup
-    public abstract CancelEnrollRequestOperation cancelEnrollRequestTransferOperation(
-            DldWallet dldWallet,
-            BigInteger amount,
-            String documentUid,
-            String data);
-
-    @Lookup
-    public abstract CancelEnrollRequestOperation cancelEnrollRequestTransferOperation(
-            DldWallet dldWallet,
-            BigInteger amount,
-            String documentUid,
-            String data,
-            Consumer<RegisterDocumentEvent> onExecute,
-            Consumer<RegisterDocumentReceipt> onReject);
-
-    @Lookup
-    public abstract EnrollTransferOperation enrollOperation(
-            DldWallet dldWallet,
-            BigInteger amount,
-            String documentUid,
-            String data);
-
-    @Lookup
-    public abstract EnrollTransferOperation enrollOperation(
-            DldWallet dldWallet,
-            BigInteger amount,
-            String documentUid,
-            String data,
-            Consumer<RegisterDocumentEvent> onExecute,
-            Consumer<RegisterDocumentReceipt> onReject);
-
-    @Lookup
-    public abstract RegisterCasinoOperation registerCasinoOperation(
-            Casino casino,
-            String data);
-
-    @Lookup
-    public abstract RegisterCasinoOperation registerCasinoOperation(
-            Casino casino,
-            String data,
-            Consumer<RegisterEvent> onExecute,
-            Consumer<RegisterCasinoReceipt> onReject);
-
-    @Lookup
-    public abstract RegisterUserOperation registerUserOperation(
-            DldWallet dldWallet,
-            String data);
-
-    @Lookup
-    public abstract RegisterUserOperation registerUserOperation(
-            DldWallet dldWallet,
-            String data,
-            Consumer<RegisterEvent> onExecute,
-            Consumer<RegisterUserReceipt> onReject);
-
-    @Lookup
-    public abstract GetUserDocumentListOperation getUserDocumentListOperation(
-            String address);
-
-    @Lookup
-    public abstract GetUserDocumentListOperation getUserDocumentListOperation(
-            DldWallet wallet);
-
-    @Lookup
-    public abstract GetUserDocumentBlockOperation getUserDocumentBlockOperation(
-            String address, String documentUID);
-
-    @Lookup
-    public abstract GetUserDocumentBlockOperation getUserDocumentBlockOperation(
-            DldWallet wallet, String documentUID);*/
+public abstract class TokenContractOperationFactory {
 
     @Lookup
     public abstract GetTokenSymbolOperation getTokenSymbolOperation(Credentials senderCredentials);

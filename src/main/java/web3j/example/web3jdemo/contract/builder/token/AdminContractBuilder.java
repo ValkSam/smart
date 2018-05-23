@@ -9,9 +9,9 @@ import org.web3j.crypto.CipherException;
 import org.web3j.crypto.Credentials;
 import org.web3j.protocol.Web3j;
 import web3j.example.web3jdemo.Web3jProvider;
+import web3j.example.web3jdemo.blockchain.DltAdminContract;
 import web3j.example.web3jdemo.blockchain.config.EthereumConfig;
 import web3j.example.web3jdemo.blockchain.txmanager.TransactionManagerFactory;
-import web3j.example.web3jdemo.contract.wrapper.token.DltTokenContract;
 
 import java.io.IOException;
 import java.math.BigInteger;
@@ -19,7 +19,7 @@ import java.math.BigInteger;
 @Component
 @Setter
 @Scope(ConfigurableBeanFactory.SCOPE_PROTOTYPE)
-public class TokenContractBuilder {
+public class AdminContractBuilder {
 
     @Autowired
     protected EthereumConfig ethereumConfig;
@@ -36,16 +36,16 @@ public class TokenContractBuilder {
     private BigInteger gasPrice;
     private BigInteger gasLimit;
 
-    public TokenContractBuilder(Credentials credentials) {
+    public AdminContractBuilder(Credentials credentials) {
         this.credentials = credentials;
     }
 
-    public DltTokenContract build() throws IOException, CipherException {
-        this.setContractAddress(ethereumConfig.getTokenContractAddress());
+    public DltAdminContract build() throws IOException, CipherException {
+        this.setContractAddress(ethereumConfig.getAdminContractAddress());
         this.setWeb3j(web3jProvider.get());
         this.setGasPrice(ethereumConfig.getDefaultGasPrice());
         this.setGasLimit(ethereumConfig.getDefaultGasLimit());
-        return DltTokenContract.load(contractAddress,
+        return DltAdminContract.load(contractAddress,
                 web3j,
                 transactionManagerFactory.transactionManager(web3j, credentials),
                 gasPrice,

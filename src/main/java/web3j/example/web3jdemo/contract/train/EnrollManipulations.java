@@ -8,7 +8,7 @@ import org.web3j.protocol.core.methods.response.TransactionReceipt;
 import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.blockchain.utils.CredentialsHelper;
 import web3j.example.web3jdemo.contract.operation.AbstractContractTransactionalOperation;
-import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
+import web3j.example.web3jdemo.contract.operation.token.TokenContractOperationFactory;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterDocumentEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterDocumentReceipt;
 import web3j.example.web3jdemo.service.DldWalletService;
@@ -36,16 +36,16 @@ public class EnrollManipulations {
 
     private final CredentialsHelper credentialsHelper;
     private final DldWalletService dldWalletService;
-    private final ContractOperationFactory contractOperationFactory;
+    private final TokenContractOperationFactory tokenContractOperationFactory;
 
     private CountDownLatch latch;
 
     public EnrollManipulations(CredentialsHelper credentialsHelper,
                                DldWalletService dldWalletService,
-                               ContractOperationFactory contractOperationFactory) {
+                               TokenContractOperationFactory tokenContractOperationFactory) {
         this.credentialsHelper = credentialsHelper;
         this.dldWalletService = dldWalletService;
-        this.contractOperationFactory = contractOperationFactory;
+        this.tokenContractOperationFactory = tokenContractOperationFactory;
     }
 
     Consumer<RegisterDocumentEvent> onRegisterDocumentSuccess = (event) -> {
@@ -144,7 +144,7 @@ public class EnrollManipulations {
 
     public void registerEnroll(Credentials senderCredentials, int walletId) throws ExecutionException, InterruptedException, IOException, TransactionException {
 
-        AbstractContractTransactionalOperation enrollRequestOperation = contractOperationFactory.registerEnrollRequestDocumentOperation(
+        AbstractContractTransactionalOperation enrollRequestOperation = tokenContractOperationFactory.registerEnrollRequestDocumentOperation(
                 senderCredentials,
                 dldWalletService.getWalletById(walletId),
                 BigInteger.valueOf(walletId),
@@ -159,7 +159,7 @@ public class EnrollManipulations {
 
     public void registerEnroll(Credentials senderCredentials, int walletId, String doc) throws ExecutionException, InterruptedException, IOException, TransactionException {
 
-        AbstractContractTransactionalOperation enrollRequestOperation = contractOperationFactory.registerEnrollRequestDocumentOperation(
+        AbstractContractTransactionalOperation enrollRequestOperation = tokenContractOperationFactory.registerEnrollRequestDocumentOperation(
                 senderCredentials,
                 dldWalletService.getWalletById(walletId),
                 BigInteger.valueOf(walletId),
@@ -174,7 +174,7 @@ public class EnrollManipulations {
 
     public void cancelEnroll(Credentials senderCredentials, int walletId, String doc) throws ExecutionException, InterruptedException, IOException, TransactionException {
 
-        AbstractContractTransactionalOperation enrollRequestOperation = contractOperationFactory.cancelEnrollRequestDocumentOperation(
+        AbstractContractTransactionalOperation enrollRequestOperation = tokenContractOperationFactory.cancelEnrollRequestDocumentOperation(
                 senderCredentials,
                 dldWalletService.getWalletById(walletId),
                 BigInteger.valueOf(walletId),

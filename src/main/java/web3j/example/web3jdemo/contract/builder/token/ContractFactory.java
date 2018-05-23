@@ -10,4 +10,7 @@ public abstract class ContractFactory {
     @Lookup
     public abstract TokenContractBuilder tokenContractBuilder(Credentials credentials);
 
+    @Lookup
+    public abstract AdminContractBuilder adminContractBuilder(Credentials credentials);
+
 }

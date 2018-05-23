@@ -3,7 +3,7 @@ package web3j.example.web3jdemo.contract.train;
 import lombok.Getter;
 import lombok.Setter;
 import org.web3j.protocol.exceptions.TransactionException;
-import web3j.example.web3jdemo.contract.operation.ContractOperationFactory;
+import web3j.example.web3jdemo.contract.operation.token.TokenContractOperationFactory;
 import web3j.example.web3jdemo.contract.operation.wrapper.event.RegisterEvent;
 import web3j.example.web3jdemo.contract.operation.wrapper.receipt.RegisterUserReceipt;
 import web3j.example.web3jdemo.service.DldWalletService;
@@ -24,7 +24,7 @@ public class UserManipulations {
 
     private final Map<Integer, Integer> blocksStatistics = new ConcurrentHashMap<>();
     private final DldWalletService dldWalletService;
-    private final ContractOperationFactory contractOperationFactory;
+    private final TokenContractOperationFactory tokenContractOperationFactory;
     private CountDownLatch latch;
 
     private Consumer<RegisterEvent> onRegisterUserSuccess = (event) -> {
@@ -51,9 +51,9 @@ public class UserManipulations {
         if (!isNull(latch)) latch.countDown();
     };
 
-    public UserManipulations(DldWalletService dldWalletService, ContractOperationFactory contractOperationFactory) {
+    public UserManipulations(DldWalletService dldWalletService, TokenContractOperationFactory tokenContractOperationFactory) {
         this.dldWalletService = dldWalletService;
-        this.contractOperationFactory = contractOperationFactory;
+        this.tokenContractOperationFactory = tokenContractOperationFactory;
     }
 
     public void registerAllUsersAndExit(int userCount) throws InterruptedException, ExecutionException, TransactionException, IOException {

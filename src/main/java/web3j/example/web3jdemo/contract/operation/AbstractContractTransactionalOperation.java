@@ -9,7 +9,7 @@ import org.web3j.protocol.exceptions.TransactionException;
 import web3j.example.web3jdemo.contract.builder.token.ContractFactory;
 import web3j.example.web3jdemo.contract.operation.actiontype.ContractActionType;
 import web3j.example.web3jdemo.contract.operation.exception.ContractException;
-import web3j.example.web3jdemo.contract.operation.exception.ContractExecutionInterruptedException;
+import web3j.example.web3jdemo.contract.operation.exception.ContractGasTooLowException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractOperationGeneralException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractUnderpricedException;
 import web3j.example.web3jdemo.contract.operation.exception.ContractUnrecognizedException;
@@ -20,12 +20,10 @@ import java.util.concurrent.CompletableFuture;
 
 import static java.lang.Integer.decode;
 import static java.util.Objects.isNull;
+import static web3j.example.web3jdemo.contract.operation.AbstractContractTransactionalOperation.KnownWeb3jException.GAS_TOO_LOW;
 import static web3j.example.web3jdemo.contract.operation.AbstractContractTransactionalOperation.KnownWeb3jException.UNDERPRICED;
 
 public abstract class AbstractContractTransactionalOperation {
-
-    private static final Integer MAX_ATTEMPTS_COUNT = 60;
-    private static final Integer ATTEMPT_INTERVAL_MILLISECONDS = 100;
 
     protected final ContractActionType contractActionType;
     protected final String data;
@@ -33,9 +31,7 @@ public abstract class AbstractContractTransactionalOperation {
     @Autowired
     protected ContractFactory contractFactory;
 
-    protected int attemptCount = 1;
     private LocalDateTime startDate = LocalDateTime.now();
-    private Exception lastException;
 
     public AbstractContractTransactionalOperation(ContractActionType contractActionType,
                                                   String data) {
@@ -61,22 +57,17 @@ public abstract class AbstractContractTransactionalOperation {
                 System.out.println(contractActionType + " >>>>>>>>>> end: " + Thread.currentThread().getName());
                 return CompletableFuture.completedFuture(receipt);
             } catch (Exception e) {
-                if (!isNull(e.getMessage()) && e.getMessage().contains(UNDERPRICED.getExceptionPhrase())) {
-                    System.out.println(contractActionType + " failed " + Thread.currentThread().getName());
-                    try {
-                        Thread.sleep(ATTEMPT_INTERVAL_MILLISECONDS);
-                    } catch (InterruptedException e1) {
-                        Thread.currentThread().interrupt();
-                        throw new ContractExecutionInterruptedException(e1);
-                    }
-                    if (attemptCount == MAX_ATTEMPTS_COUNT) {
-                        throw new ContractUnderpricedException(e);
-                    }
-                    attemptCount++;
+                System.out.println(contractActionType + " failed " + Thread.currentThread().getName());
+                if (isNull(e.getMessage())) {
+                    throw new ContractUnrecognizedException(e);
+                }
+                if (e.getMessage().contains(UNDERPRICED.getExceptionPhrase())) {
+                    throw new ContractUnderpricedException(e);
+                } else if (e.getMessage().contains(GAS_TOO_LOW.getExceptionPhrase())) {
+                    throw new ContractGasTooLowException(e);
                 } else {
                     throw new ContractUnrecognizedException(e);
                 }
-                return this.execute(remoteCall);
             }
         } catch (Exception e) {
             ContractException exception;
@@ -85,10 +76,7 @@ public abstract class AbstractContractTransactionalOperation {
             } else {
                 exception = new ContractOperationGeneralException(e);
             }
-            if (lastException == null) {
-                callOnReject(exception);
-            }
-            lastException = exception;
+            callOnReject(exception);
             throw exception;
         }
     }
@@ -113,7 +101,9 @@ public abstract class AbstractContractTransactionalOperation {
 
     @Getter
     protected enum KnownWeb3jException {
-        UNDERPRICED("replacement transaction underpriced");
+        UNDERPRICED("replacement transaction underpriced"),
+        GAS_TOO_LOW("intrinsic gas too low");
+
         private final String exceptionPhrase;
 
         KnownWeb3jException(String exceptionPhrase) {

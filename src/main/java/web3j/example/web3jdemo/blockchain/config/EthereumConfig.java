@@ -63,8 +63,11 @@ public class EthereumConfig {
     @Value("${web3j.pollingIntervalMillisec}")
     private Integer web3jPollingInterval;
 
-    @Value("${ethereum.contract.address}")
-    private String contractAddress;
+    @Value("${ethereum.contract.token.address}")
+    private String tokenContractAddress;
+
+    @Value("${ethereum.contract.admin.address}")
+    private String adminContractAddress;
 
     @Value("${ethereum.contract.owner.privateKey}")
     private String contractOwnerPrivateKey;
