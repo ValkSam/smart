@@ -1,109 +1,220 @@
 pragma solidity ^0.4.23;
 
 import 'browser/_Ownable.sol';
+import 'browser/_Fee.sol';
 import 'browser/_SafeMath.sol';
 
-contract ERC20Basic {
-  function totalSupply() public view returns (uint256);
-  function balanceOf(address who) public view returns (uint256);
-//   function transfer(address to, uint256 value) public returns (bool);
-  event Transfer(address indexed from, address indexed to, uint256 value);
-}
+contract BasicToken is Ownable {
 
-
-contract ERC20 is ERC20Basic {
-  /*function allowance(address owner, address spender)
-    public view returns (uint256);*/
-
-//   function transferFrom(address from, address to, uint256 value)
-    // public returns (bool);
-
-//   function approve(address spender, uint256 value) public returns (bool);
-
-  event Approval(
-    address indexed owner,
-    address indexed spender,
-    uint256 value
-  );
-
-}
-
-contract Casion is Ownable, ERC20 {
     using SafeMath for uint256;
 
-    uint256 totalSupply_;
+    uint256 internal totalSupply_;
+}
 
-    uint32 private adminReservedTypeBound = 1000;
-    uint32 private casinoReservedTypeBound = 2000;
+contract ManagingUserToken is BasicToken {
+
+    enum ParticipantKind {
+        ADMIN, CASINO, USER
+    }
+
+    uint32 internal adminReservedTypeBound = 1000;
+    uint32 internal casinoReservedTypeBound = 2000;
 
     struct LinkedUserData {
         address prev;
         address next;
         bool    active;
+        ParticipantKind userKind;
         uint32  userType;
         uint256 balance;
         uint256 balanceReserved;
     }
 
-    address private lastUserAddress;
-    mapping(address => LinkedUserData) private users;
+    uint256 public usersNumber;
+    address internal firstUserAddress;
+    address internal lastUserAddress;
+    mapping(address => LinkedUserData) internal users;
 
-    event Test (
-        string name,
-        address prev,
-        address next,
-        uint32 userType
+    event ParticipantRegister(
+        ParticipantKind pkKind,
+        address registeredAddress,
+        uint count,
+        string details
         );
 
-    function registerUser(address _address, uint32 userType)
+    /*restricted*/
+
+    function registerParticipant(address _address, uint32 _type) internal
         onlyAdmin
-        external
     {
-        require(_address != address(0x0));
-        require(userType > casinoReservedTypeBound);
-        require(users[_address].userType == 0 );
-        address prev = address(0x0);
-        if (lastUserAddress != 0x0) {
+        require(_address != address(0));
+        require(_type != 0);
+        require(users[_address].userType == 0);
+
+        address prev;
+
+        if (firstUserAddress == address(0)) {
+            prev = address(0x0);
+            firstUserAddress = _address;
+        } else {
             prev = lastUserAddress;
             users[lastUserAddress].next = _address;
-            emit Test(
-                    "prev",
-                    users[lastUserAddress].prev,
-                    users[lastUserAddress].next,
-                    users[lastUserAddress].userType
-            );
         }
+
         users[_address] = LinkedUserData(
             prev,
-            address(0x0),
+            address(0),
             true,
-            userType,
+            resolveUserKind(_type),
+            _type,
             0,
             0);
 
         lastUserAddress = _address;
-        emit Test(
-            "last",
-            users[_address].prev,
-            users[_address].next,
-            users[_address].userType
+        usersNumber++;
+    }
+
+    function resolveUserKind(uint32 userType) internal view
+        returns(ParticipantKind)
+    {
+        return userType > casinoReservedTypeBound
+                ? ParticipantKind.USER
+                : userType > adminReservedTypeBound
+                ? ParticipantKind.CASINO
+                : ParticipantKind.ADMIN;
+    }
+
+    function registeredAddressesAll(uint256 count) external view
+        returns(address[])
+    {
+        return registeredAddresses(address(0), count);
+    }
+
+    function registeredAddressesAll(address startAddress, uint256 count) external view
+        returns(address[])
+    {
+        return registeredAddresses(startAddress, count);
+    }
+
+    function registeredAddresses(address startAddress, uint256 count) internal view
+        onlyOwner
+        returns(address[])
+    {
+        address currentAddress = startAddress == address(0)
+                ? currentAddress = firstUserAddress
+                : startAddress;
+
+        address[] memory result = new address[](count);
+        uint256 idx = 0;
+        for (LinkedUserData memory user = users[currentAddress];
+                user.userType != 0 && idx < count;
+                user = users[currentAddress]) {
+            result[idx] = currentAddress;
+            currentAddress = user.next;
+            idx++;
+        }
+
+        return result;
+    }
+
+    function registerAdmin(address adminAddress, uint32 adminType, string details) external
+        onlyOwner
+    {
+        require(adminType <= adminReservedTypeBound);
+        registerParticipant(adminAddress, adminType);
+
+        emit ParticipantRegister (
+            ParticipantKind.ADMIN,
+            adminAddress,
+            usersNumber,
+            details
         );
     }
 
-    function totalSupply() public view returns (uint256) {
-        return totalSupply_;
+    function registerCasino(address casinoAddress, uint32 casinoType, string details) external
+        onlyOwner
+    {
+        require(casinoType > adminReservedTypeBound && casinoType <= casinoReservedTypeBound);
+        registerParticipant(casinoAddress, casinoType);
+
+        emit ParticipantRegister (
+            ParticipantKind.CASINO,
+            casinoAddress,
+            usersNumber,
+            details
+        );
     }
 
-    function balanceOf(address _address) public view returns (uint256) {
-        return users[_address].balance;
-    }
-
-    function transferFrom(address _from, address _to, int amount, string details) external
+    function registerUser(address userAddress, uint32 userType, string details) external
         onlyAdmin
     {
-        // transferFromTo(_from, _to, amount, details);
+        require(userType > casinoReservedTypeBound);
+        registerParticipant(userAddress, userType);
+
+        emit ParticipantRegister (
+            ParticipantKind.USER,
+            userAddress,
+            usersNumber,
+            details
+        );
     }
 
+    function setAdminTypeFor(address adminAddress, uint32 adminType) external
+        onlyOwner
+    {
+        require(adminType <= adminReservedTypeBound);
+        require(users[adminAddress].userType <= adminReservedTypeBound);
+        users[adminAddress].userType = adminType;
+    }
+
+    function setCasionTypeFor(address casinoAddress, uint32 casinoType) external
+        onlyAdmin
+    {
+        require(casinoType > adminReservedTypeBound && casinoType <= casinoReservedTypeBound);
+        require(users[casinoAddress].userType > adminReservedTypeBound
+                && users[casinoAddress].userType <= casinoReservedTypeBound);
+        users[casinoAddress].userType = casinoType;
+    }
+
+    function setUserTypeFor(address userAddress, uint32 userType) external
+        onlyAdmin
+    {
+        require(userType > casinoReservedTypeBound);
+        require(users[userAddress].userType > casinoReservedTypeBound);
+        users[userAddress].userType = userType;
+    }
+
+    function setAdminActiveFor(address adminAddress, bool active) external
+        onlyOwner
+    {
+        users[adminAddress].active = active;
+    }
+
+    function setCasionActiveFor(address casinoAddress, bool active) external
+        onlyAdmin
+    {
+        users[casinoAddress].active = active;
+    }
+
+    function setUserTypeFor(address userAddress, bool active) external
+        onlyAdmin
+    {
+        users[userAddress].active = active;
+    }
+
+    /*public*/
+
+    function typeOf(address _address) external view
+        returns(uint32)
+    {
+        return users[_address].userType;
+    }
+
+    function activeOf(address _address) external view
+        returns(bool)
+    {
+        return users[_address].active;
+    }
 
     /*modifier*/
 
@@ -120,6 +231,54 @@ contract Casion is Ownable, ERC20 {
                     && users[msg.sender].userType <= casinoReservedTypeBound);
         }
         _;
+    }
+}
+
+contract ManagingFee is Ownable {
+
+     Fee internal fee;
+
+     function registerFeeContract(address feeContractAddress) external
+        onlyOwner
+     {
+         fee = Fee(feeContractAddress);
+     }
+}
+
+contract Casion is ManagingUserToken, ManagingFee {
+
+    function balanceOf(address _address) external view
+        returns (uint256)
+    {
+        return users[_address].balance;
+    }
+
+    function balanceResirvedOf(address _address) external view
+        returns (uint256)
+    {
+        return users[_address].balance;
+    }
+
+    function totalSupply() external view
+        returns (uint256)
+    {
+        return totalSupply_;
+    }
+
+    function transferFrom(address _from, address _to, int amount, string details) external
+        onlyAdmin
+    {
+        // transferFromTo(_from, _to, amount, details);
+    }
+
+
+    function getFeeValue(address sender, address receiver, uint256 amount) external view returns(uint256 result){
+        result = fee.countFee(
+                users[sender].userType,
+                users[receiver].userType,
+                amount
+            );
+        assert(result != uint256(-1));
     }
 
 }
