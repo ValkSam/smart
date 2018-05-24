@@ -242,6 +242,7 @@ contract ManagingFee is Ownable {
         onlyOwner
      {
          fee = Fee(feeContractAddress);
+         require(fee.feeRulesVerified());
      }
 }
 
