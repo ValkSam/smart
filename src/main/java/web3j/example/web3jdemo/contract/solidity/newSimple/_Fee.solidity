@@ -1,0 +1,157 @@
+pragma solidity ^0.4.23;
+
+import 'browser/_Ownable.sol';
+import 'browser/_Math.sol';
+import 'browser/_SafeMath.sol';
+
+contract Fee {
+
+    using Math for uint256;
+
+    struct FeeRule {
+        uint256 userTypeSender;
+        uint256 userTypeReceiver;
+        uint256 percent;
+        uint256 fixedAmount;
+        uint256 minAmount;
+        uint256 maxAmount;
+    }
+
+    uint256 public max256 = uint256(-1);
+
+    bool public feeRulesVerified = false;
+    FeeRule[] public wrongRules;
+    FeeRule[] private feeRules;
+    mapping(uint64=>bool) private feeRuleKeys;
+
+    function init() external {
+        require(feeRules.length == 0);
+
+        feeRules.push(FeeRule(2000, 2001, 2, 3, 10, max256));          //feeRules.push(FeeRule(0, 2001, 2, 3, 10, max256));
+        feeRules.push(FeeRule(2002, 2000, 2, 3, 10, 20));         //feeRules.push(FeeRule(2002, 0, 2, 3, 10, 20));
+
+        feeRules.push(FeeRule(2004, 2001, 2, 3, 20, 30));         //feeRules.push(FeeRule(2004, 2001, 2, 3, 20, 10));
+        feeRules.push(FeeRule(2004, 2004, 2, 3, 10, max256));      //good
+        feeRules.push(FeeRule(2004, 2005, 2, 3, 10, 20));       //good
+
+        feeRules.push(FeeRule(2002, 2006, 0, 30, 10, 40));      //feeRules.push(FeeRule(2002, 2006, 0, 30, 10, 20));
+
+        feeRules.push(FeeRule(2003, 2006, 2, 3, 10, 20));   //good
+        feeRules.push(FeeRule(2003, 2007, 2, 3, 10, 20));   //good
+        //feeRules.push(FeeRule(2003, 2007, 2, 4, 20, 30));       //double
+
+        feeRules.push(FeeRule(2005, 20091, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20092, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20093, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20094, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20095, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20096, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20097, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20098, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20099, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20090, 2, 0, 0, 20));      //good
+
+        feeRules.push(FeeRule(20051, 20091, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20092, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20093, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20094, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20095, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20096, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20097, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20098, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20099, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20090, 2, 0, 0, 20));      //good
+
+        feeRules.push(FeeRule(20052, 20091, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20092, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20093, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20094, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20095, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20096, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20097, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20098, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20099, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20052, 20090, 2, 0, 0, 20));      //good
+
+        /*feeRules.push(FeeRule(20053, 20091, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20092, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20093, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20094, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20095, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20096, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20097, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20098, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20099, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20053, 20090, 2, 0, 0, 20));      //good */
+
+        /*feeRules.push(FeeRule(20054, 20091, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20092, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20093, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20094, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20095, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20096, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20097, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20098, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20099, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20054, 20090, 2, 0, 0, 20));      //good*/
+
+    }
+
+    function wrongRulesNumbers() external view
+        returns(uint256)
+    {
+        return wrongRules.length;
+    }
+
+    function countFee(uint256  userTypeSender, uint256 userTypeReceiver, uint256 amount) external view returns(uint256 result) {
+        require(feeRulesVerified);
+        FeeRule memory feeRule = getFeeRule(userTypeSender, userTypeReceiver);
+        if (feeRule.userTypeSender == 0) {
+            return uint256(-1);
+        }
+        result = amount * feeRule.percent / 100 + feeRule.fixedAmount;
+        return result.max256(feeRule.minAmount).min256(feeRule.maxAmount);
+    }
+
+    function getFeeRule(uint256 userTypeSender, uint256 userTypeReceiver) private view returns(FeeRule) {
+        for (uint256 i = 0; i < feeRules.length; i++) {
+            if (feeRules[i].userTypeSender == userTypeSender && feeRules[i].userTypeReceiver == userTypeReceiver) {
+                return feeRules[i];
+            }
+        }
+    }
+
+    function checkRuls() external
+        returns(uint256)
+    {
+        checkRuleParams();
+        feeRulesVerified = wrongRules.length == 0;
+    }
+
+    function checkRuleParams() private {
+        require(feeRules.length > 0);
+
+        for (uint i = 0; i < feeRules.length; i++) {
+            FeeRule storage feeRule = feeRules[i];
+
+            uint64 feeRuleKey = (uint64(feeRule.userTypeSender) << 32)
+                        | uint64(feeRule.userTypeReceiver);
+            if (feeRuleKeys[feeRuleKey]) {
+                wrongRules.push(feeRule);
+            } else {
+                feeRuleKeys[feeRuleKey] = true;
+            }
+
+            if (feeRule.userTypeSender == 0 || feeRule.userTypeReceiver == 0) {
+                wrongRules.push(feeRule);
+            }
+            if (feeRule.minAmount > feeRule.maxAmount) {
+                wrongRules.push(feeRule);
+            }
+            if (feeRule.fixedAmount > feeRule.maxAmount) {
+                wrongRules.push(feeRule);
+            }
+        }
+    }
+
+}

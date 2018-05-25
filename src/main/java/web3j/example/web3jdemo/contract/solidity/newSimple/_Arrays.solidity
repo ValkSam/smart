@@ -1,0 +1,44 @@
+pragma solidity ^0.4.23;
+
+library Strings {
+
+    function stringToBytes32(string self) public pure returns (bytes32 result) {
+        if (bytes(self).length == 0) {
+            return "";
+        }
+
+        assembly {
+            result := mload(add(self, 32))
+        }
+
+        return result;
+    }
+
+}
+
+library Arrays {
+
+    function find(bytes32[] memory self, bytes32 value) public pure returns (uint){
+
+        uint len = self.length;
+        for (uint i = 0; i < len; i++){
+            if (self[i] == value){
+                return i;
+                break;
+            }
+        }
+
+        return uint(-1);
+    }
+
+    function remove(bytes32[] storage self, uint index) public {
+        if (index >= self.length) return;
+
+        for (uint i = index; i<self.length-1; i++){
+            self[i] = self[i+1];
+        }
+
+        self.length--;
+    }
+
+}
