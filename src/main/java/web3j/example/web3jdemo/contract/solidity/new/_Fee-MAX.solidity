@@ -1,0 +1,191 @@
+pragma solidity ^0.4.23;
+
+import 'browser/_Ownable.sol';
+import 'browser/_Math.sol';
+import 'browser/_SafeMath.sol';
+
+contract Fee {
+
+    using Math for uint256;
+
+    struct FeeRule {
+        uint256 userTypeSender;
+        uint256 userTypeReceiver;
+        uint256 amountFrom;
+        uint256 amountTo;
+        uint256 percent;
+        uint256 fixedAmount;
+        uint256 minAmount;
+        uint256 maxAmount;
+    }
+
+    uint256 public max256 = uint256(-1);
+
+    bool public feeRulesVerified = false;
+    bool private verifyingDone = false;
+    FeeRule[] public wrongRules;
+    FeeRule[] private feeRules;
+    mapping(uint256 => FeeRule[]) private groupedRules;
+    uint64[] private groupKeys;
+
+    function init() external {
+        require(feeRules.length == 0);
+
+        feeRules.push(FeeRule(2000, 2001, 0, max256, 2, 3, 10, 20));         //feeRules.push(FeeRule(0, 2001, 0, max256, 2, 3, 10, 20));
+        feeRules.push(FeeRule(2002, 2001, 0, max256, 2, 3, 10, 20));         //feeRules.push(FeeRule(2002, 0, 0, max256, 2, 3, 10, 20));
+        feeRules.push(FeeRule(2002, 2003, 20, 30, 2, 3, 10, 20));       //feeRules.push(FeeRule(2002, 2003, 20, 10, 2, 3, 10, 20));
+
+        feeRules.push(FeeRule(2004, 2001, 0, max256, 2, 3, 20, 40));         //feeRules.push(FeeRule(2004, 2001, 0, max256, 2, 3, 20, 10));
+        feeRules.push(FeeRule(2004, 2004, 0, max256, 2, 3, 10, max256));      //good
+        feeRules.push(FeeRule(2004, 2005, 0, max256, 2, 3, 10, 20));     //good
+
+        feeRules.push(FeeRule(2002, 2006, 0, max256, 2, 30, 10, 40));        //feeRules.push(FeeRule(2002, 2006, 0, max256, 2, 30, 10, 20));
+
+        feeRules.push(FeeRule(2003, 2006, 10, 20, 2, 3, 10, 20));   //good
+        feeRules.push(FeeRule(2003, 2007, 10, 20, 2, 3, 10, 20));   //good
+        feeRules.push(FeeRule(2003, 2007, 100, 200, 2, 3, 10, 20));       //feeRules.push(FeeRule(2003, 2007, 10, 20, 2, 3, 10, 20));
+        feeRules.push(FeeRule(2003, 2007, 201, 301, 2, 0, 0, 20));        //feeRules.push(FeeRule(2003, 2007, 20, 30, 2, 0, 0, 20));
+        feeRules.push(FeeRule(2003, 2007, 500, 1000, 2, 0, 0, 20));       //feeRules.push(FeeRule(2003, 2007, 5, 10, 2, 0, 0, 20));
+        feeRules.push(FeeRule(2003, 2007, 1100, 1900, 2, 0, 0, 20));      //feeRules.push(FeeRule(2003, 2007, 11, 19, 2, 0, 0, 20));
+
+        feeRules.push(FeeRule(2004, 2008, 20, 30, 2, 0, 0, 200));          //intersect
+        feeRules.push(FeeRule(2004, 2008, 0, max256, 2, 0, 0, 20));
+
+        feeRules.push(FeeRule(2005, 20091, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20092, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20093, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20094, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20095, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20096, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20097, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20098, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20099, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20090, 0, max256, 2, 0, 0, 20));      //good
+
+        /*feeRules.push(FeeRule(2005, 200911, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200922, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200933, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200944, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200955, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200966, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200977, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200988, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200999, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 200900, 0, max256, 2, 0, 0, 20));      //good*/
+
+        /*feeRules.push(FeeRule(2005, 2009111, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009222, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009333, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009444, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009555, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009666, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009777, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009888, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009999, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 2009000, 0, max256, 2, 0, 0, 20));      //good*/
+
+        /*feeRules.push(FeeRule(2005, 20091111, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20092221, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20093331, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20094441, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20095551, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20096661, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20097771, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20098881, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20099991, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(2005, 20090001, 0, max256, 2, 0, 0, 20));      //good*/
+
+        /*feeRules.push(FeeRule(20051, 20091111, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20092221, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20093331, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20094441, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20095551, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20096661, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20097771, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20098881, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20099991, 0, max256, 2, 0, 0, 20));      //good
+        feeRules.push(FeeRule(20051, 20090001, 0, max256, 2, 0, 0, 20));      //good*/
+
+    }
+
+    function wrongRulesNumbers() external view
+        returns(uint256)
+    {
+        return wrongRules.length;
+    }
+
+    function countFee(uint256  userTypeSender, uint256 userTypeReceiver, uint256 amount) external view returns(uint256 result) {
+        require(feeRulesVerified);
+        FeeRule memory feeRule = getFeeRule(userTypeSender, userTypeReceiver, amount);
+        if (feeRule.userTypeSender == 0) {
+            return uint256(-1);
+        }
+        result = amount * feeRule.percent / 100 + feeRule.fixedAmount;
+        result = result.max256(feeRule.minAmount);
+        return feeRule.maxAmount == 0 ? result : result.min256(feeRule.maxAmount);
+    }
+
+    function getFeeRule(uint256 userTypeSender, uint256 userTypeReceiver, uint256 amount) private view returns(FeeRule) {
+        for (uint256 i = 0; i < feeRules.length; i++) {
+            if (feeRules[i].userTypeSender == userTypeSender && feeRules[i].userTypeReceiver == userTypeReceiver) {
+                if (feeRules[i].amountTo == 0) {
+                    return feeRules[i];
+                }
+                if (feeRules[i].amountFrom >= amount && amount <= feeRules[i].amountTo) {
+                    return feeRules[i];
+                }
+            }
+        }
+    }
+
+    function checkRuls() external
+        returns(uint256)
+    {
+        // require(!verifyingDone);
+        checkRuleParams();
+        checkRuleIntersection ();
+        feeRulesVerified = wrongRules.length == 0;
+        // verifyingDone = true;
+    }
+
+    function checkRuleParams() private {
+        for (uint i = 0; i < feeRules.length; i++) {
+            FeeRule storage feeRule = feeRules[i];
+            if (feeRule.userTypeSender == 0 || feeRule.userTypeReceiver == 0) {
+                wrongRules.push(feeRule);
+            }
+            if (feeRule.amountFrom > feeRule.amountTo) {
+                wrongRules.push(feeRule);
+            }
+            if (feeRule.minAmount > feeRule.maxAmount) {
+                wrongRules.push(feeRule);
+            }
+            if (feeRule.fixedAmount > feeRule.maxAmount) {
+                wrongRules.push(feeRule);
+            }
+        }
+    }
+
+    function checkRuleIntersection() private {
+
+        for (uint i = 0; i < feeRules.length; i++) {
+            FeeRule storage feeRule = feeRules[i];
+            uint64 groupKey = (uint64(feeRule.userTypeSender) << 32)
+                        | uint64(feeRule.userTypeReceiver);
+
+            for (uint j = 0; j < groupedRules[groupKey].length; j++) {
+                if ((groupedRules[groupKey][j].amountFrom <= feeRule.amountFrom && feeRule.amountFrom <= groupedRules[groupKey][j].amountTo)
+                    || (groupedRules[groupKey][j].amountFrom <= feeRule.amountTo && feeRule.amountTo <= groupedRules[groupKey][j].amountTo)
+                    || (groupedRules[groupKey][j].amountFrom > feeRule.amountTo && feeRule.amountTo > groupedRules[groupKey][j].amountTo)) {
+                    wrongRules.push(feeRule);
+                }
+            }
+            if (groupedRules[groupKey].length == 0) {
+                groupKeys.push(groupKey);
+            }
+            groupedRules[groupKey].push(feeRule);
+        }
+
+    }
+
+}

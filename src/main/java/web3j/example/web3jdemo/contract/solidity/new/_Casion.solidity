@@ -3,15 +3,22 @@ pragma solidity ^0.4.23;
 import 'browser/_Ownable.sol';
 import 'browser/_Fee.sol';
 import 'browser/_SafeMath.sol';
+import 'browser/_Arrays.sol';
 
 contract BasicToken is Ownable {
 
     using SafeMath for uint256;
 
+    uint256 internal maxSupply_;
     uint256 internal totalSupply_;
+
+    function totalSupply() public view returns(uint256);
+    function setTotalSupply(uint256 amount) internal;
+
+    function maxSupply() public view returns(uint256);
 }
 
-contract ManagingUserToken is BasicToken {
+contract ManagingUser is BasicToken {
 
     enum ParticipantKind {
         ADMIN, CASINO, USER
@@ -210,7 +217,7 @@ contract ManagingUserToken is BasicToken {
         return users[_address].userType;
     }
 
-    function activeOf(address _address) external view
+    function activeOf(address _address) public view
         returns(bool)
     {
         return users[_address].active;
@@ -246,7 +253,196 @@ contract ManagingFee is Ownable {
      }
 }
 
-contract Casion is ManagingUserToken, ManagingFee {
+contract Documenting {
+
+    using Arrays for bytes32[];
+    using Strings for string;
+
+    mapping(address=>mapping(bytes32=>uint256)) internal docLogs;
+    mapping(address=>bytes32[]) internal docLogsList;
+
+    function documentsUIDs(address _address) public view
+        returns (bytes32[] documentUIDs)
+    {
+        return docLogsList[_address];
+    }
+
+    function documentExists(address _address, string documentUID) public view
+        returns(bool)
+    {
+        return documentAmount(_address, documentUID) != 0;
+    }
+
+    function documentAmount(address _address, string documentUID) public view
+        returns(uint256)
+    {
+        return docLogs[_address][documentHash(documentUID)];
+    }
+
+    function addDocument(address _address, uint amount, string documentUID) internal
+    {
+        require(bytes(documentUID).length != 0);
+        require(bytes(documentUID).length <= 32);
+        require(amount > 0);
+        require(!documentExists(_address, documentUID));
+        bytes32 documentUIDHash = documentHash(documentUID);
+        docLogs[_address][documentUIDHash] = amount;
+        docLogsList[_address].push(documentUIDHash);
+    }
+
+    function removeDocument(address _address, string documentUID) internal
+    {
+        require(documentExists(_address, documentUID));
+        bytes32 documentUIDHash = documentHash(documentUID);
+        uint256 idx = docLogsList[_address].find(documentUIDHash);
+        assert(idx != uint(-1));
+        docLogsList[_address].remove(idx);
+        delete docLogs[_address][documentUIDHash];
+    }
+
+    function documentHash(string document) internal pure
+        returns(bytes32)
+    {
+        return document.stringToBytes32();
+    }
+}
+
+contract OperatingUser is ManagingUser {
+
+    function incBalance(address userAddress, uint256 amount) internal
+        onlyForActiveUser(userAddress)
+    {
+        users[userAddress].balance.add(amount);
+    }
+
+    function decBalance(address userAddress, uint256 amount) internal
+        onlyForActiveUser(userAddress)
+    {
+        users[userAddress].balance.sub(amount);
+    }
+
+    function incBalanceReserved(address userAddress, uint256 amount) internal
+        onlyForActiveUser(userAddress)
+    {
+        users[userAddress].balanceReserved.add(amount);
+    }
+
+    function decBalanceReserved(address userAddress, uint256 amount) internal
+        onlyForActiveUser(userAddress)
+    {
+        users[userAddress].balanceReserved.sub(amount);
+    }
+
+    modifier onlyForActiveUser(address userAddress) {
+        require (activeOf(userAddress));
+        _;
+    }
+
+}
+
+contract Enrolling is Documenting, OperatingUser {
+
+    event RegisterEnrollDocument(
+        address user,
+        string documentUID,
+        uint256 amount,
+        string details
+        );
+
+    event Mint(
+        address user,
+        uint256 amount,
+        string documentUID,
+        string details
+        );
+
+    function registerEnrollRequest(address userAddress, uint256 amount, string documentUID, string details) external
+        onlyAdmin
+    {
+        require(users[userAddress].userKind == ParticipantKind.USER);
+        addDocument(userAddress, amount, documentUID);
+
+        emit RegisterEnrollDocument(
+            userAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function enroll(address userAddress, string documentUID, string details) external
+        onlyAdmin
+    {
+        uint256 currentTotalSupply = totalSupply();
+        uint256 amount = documentAmount(userAddress, documentUID);
+        require(currentTotalSupply + amount <= maxSupply());
+        setTotalSupply(currentTotalSupply.add(amount));
+
+        removeDocument(userAddress, documentUID);
+
+        incBalance(userAddress, amount);
+
+        emit Mint(
+            userAddress,
+            amount,
+            documentUID,
+            details);
+    }
+
+}
+
+contract Withdrowin is Documenting, OperatingUser {
+
+    event RegisterWithdrawDocument(
+        address user,
+        string documentUID,
+        uint256 amount,
+        string details
+        );
+
+    event Burn(
+        address user,
+        uint256 amount,
+        string documentUID,
+        string details
+        );
+
+    function registerWithdrawRequest(address userAddress, uint256 amount, string documentUID, string details) external
+        onlyAdmin
+    {
+        require(users[userAddress].userKind == ParticipantKind.USER);
+        addDocument(userAddress, amount, documentUID);
+
+        decBalance(userAddress, amount);
+        incBalanceReserved(userAddress, amount);
+
+        emit RegisterWithdrawDocument(
+            userAddress,
+            documentUID,
+            amount,
+            details);
+    }
+
+    function withdraw(address userAddress, string documentUID, string details) external
+        onlyAdmin
+    {
+        uint256 currentTotalSupply = totalSupply();
+        uint256 amount = documentAmount(userAddress, documentUID);
+        setTotalSupply(currentTotalSupply.sub(amount));
+
+        removeDocument(userAddress, documentUID);
+
+        decBalanceReserved(userAddress, amount);
+
+        emit Burn(
+            userAddress,
+            amount,
+            documentUID,
+            details);
+    }
+
+}
+
+contract Casion is OperatingUser, ManagingFee {
 
     function balanceOf(address _address) external view
         returns (uint256)
@@ -260,10 +456,20 @@ contract Casion is ManagingUserToken, ManagingFee {
         return users[_address].balance;
     }
 
-    function totalSupply() external view
+    function maxSupply() public view
+        returns (uint256)
+    {
+        return maxSupply_;
+    }
+
+    function totalSupply() public view
         returns (uint256)
     {
         return totalSupply_;
+    }
+
+    function setTotalSupply(uint256 amount) internal {
+        totalSupply_ = amount;
     }
 
     function transferFrom(address _from, address _to, int amount, string details) external
