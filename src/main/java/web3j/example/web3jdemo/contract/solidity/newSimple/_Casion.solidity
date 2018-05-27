@@ -234,6 +234,7 @@ contract OperatingUser is ManagingUser {
         address indexed from,
         address indexed to,
         uint amount,
+        uint fee,
         string details
         );
 
@@ -317,6 +318,7 @@ contract Enrolling is Documenting, OperatingUser {
             0,
             userAddress,
             amount,
+            0,
             details
             );
     }
@@ -374,6 +376,7 @@ contract Withdrowing is Documenting, OperatingUser {
             userAddress,
             0,
             amount,
+            0,
             details
             );
     }
@@ -401,46 +404,11 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
         transferFromTo(msg.sender, receiver, amount, details);
     }
 
-    /*function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
-        onlyAdmin
-    {
-        uint sl = senders.length;
-        uint rl = receivers.length;
-        uint al = amounts.length;
-        require(sl == 1 || sl == rl || sl == al);
-        require(rl == 1 || rl == sl || rl == al);
-        require(al == 1 || al == sl || al == rl);
-
-        uint i;
-        if (bytes(delimiter).length == 0) {
-            for (i = 0; i < sl && i < rl; i++) {
-                transferFromTo(
-                    senders[i.min256(sl-1)],
-                    receivers[i.min256(rl-1)],
-                    amounts[i.min256(al-1)],
-                    details);
-            }
-        } else {
-            var detailsSlice = details.toSlice();
-            var delim = delimiter.toSlice();
-            require(sl == detailsSlice.count(delim) + 1
-                    ||rl == detailsSlice.count(delim) + 1);
-
-            for (i = 0; i < sl && i < rl; i++) {
-                transferFromTo(
-                    senders[i.min256(sl-1)],
-                    receivers[i.min256(rl-1)],
-                    amounts[i.min256(al-1)],
-                    detailsSlice.split(delim).toString());
-            }
-        }
-    }*/
-
     function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
         onlyAdmin
     {
-        require(senders.length == 1 || senders.length == receivers.length || senders.length == amounts.length);
-        require(receivers.length == 1 || receivers.length == senders.length || receivers.length == amounts.length);
+        require(senders.length == 1 || senders.length == receivers.length || senders.length == amounts.length || (receivers.length == 1 && amounts.length == 1));
+        require(receivers.length == 1 || receivers.length == senders.length || receivers.length == amounts.length || (senders.length == 1 && amounts.length == 1));
         require(amounts.length == 1 || amounts.length == senders.length || amounts.length == receivers.length);
 
         uint i;
@@ -468,79 +436,11 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
         }
     }
 
-    /*function transferFrom(address sender, address receiver, uint amount, string details) external
-        onlyAdmin
-    {
-        transferFromTo(sender, receiver, amount, details);
+    function A (string details) public returns (string) {
+        var detailsSlice = details.toSlice();
+        var delim = "-".toSlice();
+        return "aa";
     }
-
-    function transferFrom(address[] senders, address receiver, uint amount, string details) external
-        onlyAdmin
-    {
-        for (uint i = 0; i < senders.length; i++) {
-            transferFromTo(senders[i], receiver, amount, details);
-        }
-    }
-
-    function transferFrom(address[] senders, address[] receivers, uint amount, string details) external
-        onlyAdmin
-    {
-        require(senders.length == receivers.length);
-        for (uint i = 0; i < senders.length; i++) {
-            transferFromTo(senders[i], receivers[i], amount, details);
-        }
-    }
-
-    function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
-        onlyAdmin
-    {
-        require(senders.length == receivers.length);
-        require(senders.length == amounts.length);
-        uint i;
-        if (bytes(delimiter).length == 0) {
-            for (i = 0; i < senders.length; i++) {
-                transferFromTo(senders[i], receivers[i], amounts[i], details);
-            }
-        } else {
-            var detailsSlice = details.toSlice();
-            var delim = delimiter.toSlice();
-            require(senders.length == detailsSlice.count(delim) + 1);
-
-            for (i = 0; i < senders.length; i++) {
-                transferFromTo(senders[i], receivers[i], amounts[i], detailsSlice.split(delim).toString());
-            }
-        }
-    }
-
-    function transferFrom(address sender, address[] receivers, uint amount, string details) external
-        onlyAdmin
-        returns(bool)
-    {
-        for (uint i = 0; i < receivers.length; i++) {
-            transferFromTo(sender, receivers[i], amount, details);
-        }
-        return true;
-    }
-
-    function transferFrom(address sender, address[] receivers, uint[] amounts, string details, string delimiter) external
-        onlyAdmin
-    {
-        require(receivers.length == amounts.length);
-        uint i;
-        if (bytes(delimiter).length == 0) {
-            for (i = 0; i < receivers.length; i++) {
-                transferFromTo(sender, receivers[i], amounts[i], details);
-            }
-        } else {
-            var detailsSlice = details.toSlice();
-            var delim = delimiter.toSlice();
-            require(receivers.length == detailsSlice.count(delim) + 1);
-
-            for (i = 0; i < receivers.length; i++) {
-                transferFromTo(sender, receivers[i], amounts[i], detailsSlice.split(delim).toString());
-            }
-        }
-    }*/
 
     function transferFromTo(address from, address to, uint amount, string details) private  {
         uint feeValue = getFeeValue(
@@ -549,26 +449,28 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
                 to,
                 amount
         );
-        require(amount.add(feeValue) <= users[from].balance);
+        /*require(amount.add(feeValue) <= users[from].balance);
         users[from].balance = users[from].balance.sub(amount.add(feeValue));
-        users[to].balance = users[to].balance.add(amount);
+        users[to].balance = users[to].balance.add(amount);*/
 
         emit Transfer(
             from,
             to,
             amount,
+            feeValue,
             details
             );
     }
 
     function getFeeValue(address initiator, address sender, address receiver, uint amount) public view returns(uint result){
-        result = fee.countFee(
+        /*result = fee.countFee(
                 users[initiator].userType,
                 users[sender].userType,
                 users[receiver].userType,
                 amount
-            );
-        assert(result != uint(-1));
+            );*/
+        result = fee.countFee(1,1,1,1);
+        // assert(result != uint(-1));
     }
 
 }
