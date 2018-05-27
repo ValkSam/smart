@@ -1,476 +1,103 @@
 pragma solidity ^0.4.23;
 
 import 'browser/_Ownable.sol';
-import 'browser/_Fee.sol';
+import 'browser/_Math.sol';
 import 'browser/_SafeMath.sol';
-import 'browser/_Arrays.sol';
-import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 
-contract BasicToken is Ownable {
+contract Fee {
 
-    using SafeMath for uint;
-    using strings for *;
+    using Math for uint256;
 
-    uint public maxSupply;
-    uint public totalSupply;
-
-}
-
-contract ManagingUser is BasicToken {
-
-    enum UserKind {
-        ADMIN, USER
+    struct FeeRule {
+        uint256 userTypeSender;
+        uint256 userTypeReceiver;
+        uint256 percent;
+        uint256 fixedAmount;
+        uint256 minAmount;
+        uint256 maxAmount;
     }
 
-    struct UserData {
-        bool    active;
-        UserKind userKind;
-        uint userType;
-        uint balance;
-        uint balanceReserved;
+    uint256 private max256 = uint256(-1);
+
+    bool public feeRulesVerified = false;
+    FeeRule[] public wrongRules;
+    FeeRule[] private feeRules;
+    mapping(uint64=>bool) private feeRuleKeys;
+
+    function init() external {
+        require(feeRules.length == 0);
+        feeRules.push(FeeRule(2001, 2002, 1, 3, 10, max256));
+
+        feeRules.push(FeeRule(2000, 2001, 2, 3, 10, max256));          //feeRules.push(FeeRule(0, 2001, 2, 3, 10, max256));
+        feeRules.push(FeeRule(2002, 2000, 2, 3, 10, 20));         //feeRules.push(FeeRule(2002, 0, 2, 3, 10, 20));
+
+        feeRules.push(FeeRule(2004, 2001, 2, 3, 20, 30));         //feeRules.push(FeeRule(2004, 2001, 2, 3, 20, 10));
+        feeRules.push(FeeRule(2004, 2004, 2, 3, 10, max256));      //good
+        feeRules.push(FeeRule(2004, 2005, 2, 3, 10, 20));       //good
+
+        feeRules.push(FeeRule(2002, 2006, 0, 30, 10, 40));      //feeRules.push(FeeRule(2002, 2006, 0, 30, 10, 20));
+
+        feeRules.push(FeeRule(2003, 2006, 2, 3, 10, 20));   //good
+        feeRules.push(FeeRule(2003, 2007, 2, 3, 10, 20));   //good
+        //feeRules.push(FeeRule(2003, 2007, 2, 4, 20, 30));       //double
+
     }
 
-    uint public usersNumber;
-    mapping(address => UserData) internal users;
-
-    event UserRegister(
-        address indexed userAddress,
-        UserKind indexed userKind,
-        string details
-        );
-
-    event UserTypeSetting(
-        address indexed userAddress,
-        uint indexed prevType,
-        uint indexed newType
-        );
-
-    event UserActiveSetting(
-        address indexed userAddress,
-        bool indexed acive,
-        string details
-        );
-
-    /*restricted*/
-
-    function registerAdmin(address userAddress, uint32 userType, string details) external
-        onlyOwner
+    function wrongRulesNumbers() external view
+        returns(uint256)
     {
-        registerUser(userAddress, UserKind.ADMIN, userType, details);
+        return wrongRules.length;
     }
 
-    function registerUser(address[] userAddresses, uint32 userType, string details, string delimiter) external
-        onlyAdmin
-    {
-        uint i;
-        if (bytes(delimiter).length == 0) {
-            for (i = 0; i < userAddresses.length; i++) {
-                registerUser(userAddresses[i], UserKind.USER, userType, details);
-            }
-        } else {
-            var detailsSlice = details.toSlice();
-            var delim = delimiter.toSlice();
-            require(userAddresses.length == detailsSlice.count(delim) + 1);
+    function countFee(uint256  initiator, uint256  userTypeSender, uint256 userTypeReceiver, uint256 amount) external view returns(uint256 result) {
+        require(feeRulesVerified);
+        FeeRule memory feeRule = getFeeRule(userTypeSender, userTypeReceiver);
+        if (feeRule.userTypeSender == 0) {
+            return uint256(-1);
+        }
+        result = amount * feeRule.percent / 100 + feeRule.fixedAmount;
+        return result.max256(feeRule.minAmount).min256(feeRule.maxAmount);
+    }
 
-            for (i = 0; i < userAddresses.length; i++) {
-                registerUser(userAddresses[i], UserKind.USER, userType, details);
+    function getFeeRule(uint256 userTypeSender, uint256 userTypeReceiver) private view returns(FeeRule) {
+        for (uint256 i = 0; i < feeRules.length; i++) {
+            if (feeRules[i].userTypeSender == userTypeSender && feeRules[i].userTypeReceiver == userTypeReceiver) {
+                return feeRules[i];
             }
         }
     }
 
-    function registerUser(address userAddress, UserKind userKind, uint32 userType, string details) internal {
-        require(userAddress != address(0));
-        require(userType != 0);
-        require(users[userAddress].userType == 0);
-
-        users[userAddress] = UserData(true, userKind, userType, 0, 0);
-
-        usersNumber++;
-
-        emit UserRegister (
-            userAddress,
-            userKind,
-            details
-            );
-
-        emit UserTypeSetting (
-            userAddress,
-            0,
-            userType
-            );
-    }
-
-    function setUserTypeFor(address userAddress, uint32 userType) external
-        onlyAdmin
+    function checkRuls() external
+        returns(uint256)
     {
-        uint currUserType = users[userAddress].userType;
-        require(currUserType != userType);
-        users[userAddress].userType = userType;
-
-        emit UserTypeSetting (
-            userAddress,
-            currUserType,
-            userType
-            );
+        checkRuleParams();
+        feeRulesVerified = wrongRules.length == 0;
     }
 
-    function activateUser(address userAddress, string details) external
-        onlyAdmin
-    {
-        setUserActiveFor(userAddress, true, details);
-    }
+    function checkRuleParams() private {
+        require(feeRules.length > 0);
 
-    function deActivateUser(address userAddress, string details) external
-        onlyAdmin
-    {
-        setUserActiveFor(userAddress, false, details);
-    }
+        for (uint i = 0; i < feeRules.length; i++) {
+            FeeRule storage feeRule = feeRules[i];
 
-    function setUserActiveFor(address userAddress, bool active, string details) internal {
-        require(users[userAddress].active != active);
-        users[userAddress].active = active;
-
-        emit UserActiveSetting (
-            userAddress,
-            active,
-            details
-            );
-    }
-
-    /*public*/
-
-    function typeOf(address _address) external view
-        returns(uint)
-    {
-        return users[_address].userType;
-    }
-
-    function activeOf(address _address) public view
-        returns(bool)
-    {
-        return users[_address].active;
-    }
-
-    /*modifier*/
-
-    modifier onlyAdmin() {
-        if (msg.sender != owner) {
-            require (users[msg.sender].userKind == UserKind.ADMIN);
-        }
-        _;
-    }
-
-}
-
-contract ManagingFee is Ownable {
-
-     Fee internal fee;
-
-     function registerFeeContract(address feeContractAddress) external
-        onlyOwner
-     {
-         fee = Fee(feeContractAddress);
-         require(fee.feeRulesVerified());
-     }
-}
-
-contract Documenting {
-
-    using Arrays for bytes32[];
-    using Strings for string;
-
-    mapping(address=>mapping(bytes32=>uint)) internal docLogs;
-    mapping(address=>bytes32[]) internal docLogsList;
-
-    function documentsUIDs(address _address) public view
-        returns (bytes32[] documentUIDs)
-    {
-        return docLogsList[_address];
-    }
-
-    function documentExists(address _address, string documentUID) public view
-        returns(bool)
-    {
-        return documentAmount(_address, documentUID) != 0;
-    }
-
-    function documentAmount(address _address, string documentUID) public view
-        returns(uint)
-    {
-        return docLogs[_address][documentHash(documentUID)];
-    }
-
-    function addDocument(address _address, uint amount, string documentUID) internal
-    {
-        require(bytes(documentUID).length != 0);
-        require(bytes(documentUID).length <= 32);
-        require(amount > 0);
-        require(!documentExists(_address, documentUID));
-        bytes32 documentUIDHash = documentHash(documentUID);
-        docLogs[_address][documentUIDHash] = amount;
-        docLogsList[_address].push(documentUIDHash);
-    }
-
-    function removeDocument(address _address, string documentUID) internal
-    {
-        require(documentExists(_address, documentUID));
-        bytes32 documentUIDHash = documentHash(documentUID);
-        uint idx = docLogsList[_address].find(documentUIDHash);
-        assert(idx != uint(-1));
-        docLogsList[_address].remove(idx);
-        delete docLogs[_address][documentUIDHash];
-    }
-
-    function documentHash(string document) internal pure
-        returns(bytes32)
-    {
-        return document.stringToBytes32();
-    }
-}
-
-contract OperatingUser is ManagingUser {
-
-    event Transfer(
-        address indexed from,
-        address indexed to,
-        uint amount,
-        uint fee,
-        string details
-        );
-
-    function incBalance(address userAddress, uint amount) internal
-        onlyForActiveUser(userAddress)
-    {
-        users[userAddress].balance = users[userAddress].balance.add(amount);
-    }
-
-    function decBalance(address userAddress, uint amount) internal
-        onlyForActiveUser(userAddress)
-    {
-        users[userAddress].balance = users[userAddress].balance.sub(amount);
-    }
-
-    function incBalanceReserved(address userAddress, uint amount) internal
-        onlyForActiveUser(userAddress)
-    {
-        users[userAddress].balanceReserved = users[userAddress].balanceReserved.add(amount);
-    }
-
-    function decBalanceReserved(address userAddress, uint amount) internal
-        onlyForActiveUser(userAddress)
-    {
-        users[userAddress].balanceReserved = users[userAddress].balanceReserved.sub(amount);
-    }
-
-    modifier onlyForActiveUser(address userAddress) {
-        require (activeOf(userAddress));
-        _;
-    }
-
-}
-
-contract Enrolling is Documenting, OperatingUser {
-
-    event RegisterEnrollDocument(
-        address indexed userAddress,
-        string indexed documentUID,
-        uint amount,
-        string details
-        );
-
-    event Mint(
-        address userAddress,
-        uint amount,
-        string indexed documentUID,
-        string details
-        );
-
-    function registerEnrollRequest(address userAddress, uint amount, string documentUID, string details) external
-        onlyAdmin
-    {
-        addDocument(userAddress, amount, documentUID);
-
-        emit RegisterEnrollDocument(
-            userAddress,
-            documentUID,
-            amount,
-            details);
-    }
-
-    function enroll(address userAddress, string documentUID, string details) external
-        onlyAdmin
-    {
-        uint amount = documentAmount(userAddress, documentUID);
-        require(totalSupply + amount <= maxSupply);
-        totalSupply = totalSupply.add(amount);
-
-        removeDocument(userAddress, documentUID);
-
-        incBalance(userAddress, amount);
-
-        emit Mint(
-            userAddress,
-            amount,
-            documentUID,
-            details);
-
-        emit Transfer(
-            0,
-            userAddress,
-            amount,
-            0,
-            details
-            );
-    }
-
-}
-
-contract Withdrowing is Documenting, OperatingUser {
-
-    event RegisterWithdrawDocument(
-        address indexed userAddress,
-        string indexed documentUID,
-        uint amount,
-        string details
-        );
-
-    event Burn(
-        address indexed userAddress,
-        uint amount,
-        string indexed documentUID,
-        string details
-        );
-
-    function registerWithdrawRequest(address userAddress, uint amount, string documentUID, string details) external
-        onlyAdmin
-    {
-        addDocument(userAddress, amount, documentUID);
-
-        decBalance(userAddress, amount);
-        incBalanceReserved(userAddress, amount);
-
-        emit RegisterWithdrawDocument(
-            userAddress,
-            documentUID,
-            amount,
-            details);
-    }
-
-    function withdraw(address userAddress, string documentUID, string details) external
-        onlyAdmin
-    {
-        uint amount = documentAmount(userAddress, documentUID);
-        totalSupply = totalSupply.sub(amount);
-
-        removeDocument(userAddress, documentUID);
-
-        decBalanceReserved(userAddress, amount);
-
-        emit Burn(
-            userAddress,
-            amount,
-            documentUID,
-            details);
-
-        emit Transfer(
-            userAddress,
-            0,
-            amount,
-            0,
-            details
-            );
-    }
-
-}
-
-contract Casion is Enrolling, Withdrowing, ManagingFee {
-
-    function balanceOf(address _address) external view
-        returns (uint)
-    {
-        return users[_address].balance;
-    }
-
-    function balanceResirvedOf(address _address) external view
-        returns (uint)
-    {
-        return users[_address].balance;
-    }
-
-    function transfer(address receiver, uint amount, string details) external
-        onlyForActiveUser(msg.sender)
-        onlyForActiveUser(receiver)
-    {
-        transferFromTo(msg.sender, receiver, amount, details);
-    }
-
-    function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
-        onlyAdmin
-    {
-        require(senders.length == 1 || senders.length == receivers.length || senders.length == amounts.length || (receivers.length == 1 && amounts.length == 1));
-        require(receivers.length == 1 || receivers.length == senders.length || receivers.length == amounts.length || (senders.length == 1 && amounts.length == 1));
-        require(amounts.length == 1 || amounts.length == senders.length || amounts.length == receivers.length);
-
-        uint i;
-        if (bytes(delimiter).length == 0) {
-            for (i = 0; i < senders.length && i < receivers.length; i++) {
-                transferFromTo(
-                    senders[i < senders.length ? i : 0],
-                    receivers[i < receivers.length ? i : 0],
-                    amounts[i < amounts.length ? i : 0],
-                    details);
+            uint64 feeRuleKey = (uint64(feeRule.userTypeSender) << 32)
+                        | uint64(feeRule.userTypeReceiver);
+            if (feeRuleKeys[feeRuleKey]) {
+                wrongRules.push(feeRule);
+            } else {
+                feeRuleKeys[feeRuleKey] = true;
             }
-        } else {
-            var detailsSlice = details.toSlice();
-            var delim = delimiter.toSlice();
-            require(senders.length == detailsSlice.count(delim) + 1
-                    ||receivers.length == detailsSlice.count(delim) + 1);
 
-            for (i = 0; i < senders.length && i < receivers.length; i++) {
-                transferFromTo(
-                    senders[i < senders.length ? i : 0],
-                    receivers[i < receivers.length ? i : 0],
-                    amounts[i < amounts.length ? i : 0],
-                    detailsSlice.split(delim).toString());
+            if (feeRule.userTypeSender == 0 || feeRule.userTypeReceiver == 0) {
+                wrongRules.push(feeRule);
+            }
+            if (feeRule.minAmount > feeRule.maxAmount) {
+                wrongRules.push(feeRule);
+            }
+            if (feeRule.fixedAmount > feeRule.maxAmount) {
+                wrongRules.push(feeRule);
             }
         }
-    }
-
-    function A (string details) public returns (string) {
-        var detailsSlice = details.toSlice();
-        var delim = "-".toSlice();
-        return "aa";
-    }
-
-    function transferFromTo(address from, address to, uint amount, string details) private  {
-        uint feeValue = getFeeValue(
-                msg.sender,
-                from,
-                to,
-                amount
-        );
-        /*require(amount.add(feeValue) <= users[from].balance);
-        users[from].balance = users[from].balance.sub(amount.add(feeValue));
-        users[to].balance = users[to].balance.add(amount);*/
-
-        emit Transfer(
-            from,
-            to,
-            amount,
-            feeValue,
-            details
-            );
-    }
-
-    function getFeeValue(address initiator, address sender, address receiver, uint amount) public view returns(uint result){
-        /*result = fee.countFee(
-                users[initiator].userType,
-                users[sender].userType,
-                users[receiver].userType,
-                amount
-            );*/
-        result = fee.countFee(1,1,1,1);
-        // assert(result != uint(-1));
     }
 
 }

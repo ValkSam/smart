@@ -11,7 +11,7 @@ contract BasicToken is Ownable {
     using SafeMath for uint;
     using strings for *;
 
-    uint public maxSupply;
+    uint public maxSupply = uint(-1);
     uint public totalSupply;
 
 }
@@ -73,7 +73,7 @@ contract ManagingUser is BasicToken {
             require(userAddresses.length == detailsSlice.count(delim) + 1);
 
             for (i = 0; i < userAddresses.length; i++) {
-                registerUser(userAddresses[i], UserKind.USER, userType, details);
+                registerUser(userAddresses[i], UserKind.USER, userType, detailsSlice.split(delim).toString());
             }
         }
     }
@@ -394,7 +394,7 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
     function balanceResirvedOf(address _address) external view
         returns (uint)
     {
-        return users[_address].balance;
+        return users[_address].balanceReserved;
     }
 
     function transfer(address receiver, uint amount, string details) external
@@ -436,12 +436,6 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
         }
     }
 
-    function A (string details) public returns (string) {
-        var detailsSlice = details.toSlice();
-        var delim = "-".toSlice();
-        return "aa";
-    }
-
     function transferFromTo(address from, address to, uint amount, string details) private  {
         uint feeValue = getFeeValue(
                 msg.sender,
@@ -449,9 +443,9 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
                 to,
                 amount
         );
-        /*require(amount.add(feeValue) <= users[from].balance);
+        require(amount.add(feeValue) <= users[from].balance);
         users[from].balance = users[from].balance.sub(amount.add(feeValue));
-        users[to].balance = users[to].balance.add(amount);*/
+        users[to].balance = users[to].balance.add(amount);
 
         emit Transfer(
             from,
@@ -463,14 +457,13 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
     }
 
     function getFeeValue(address initiator, address sender, address receiver, uint amount) public view returns(uint result){
-        /*result = fee.countFee(
+        result = fee.countFee(
                 users[initiator].userType,
                 users[sender].userType,
                 users[receiver].userType,
                 amount
-            );*/
-        result = fee.countFee(1,1,1,1);
-        // assert(result != uint(-1));
+            );
+        assert(result != uint(-1));
     }
 
 }
