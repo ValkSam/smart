@@ -103,7 +103,7 @@ contract Fee {
         return wrongRules.length;
     }
 
-    function countFee(uint256  userTypeSender, uint256 userTypeReceiver, uint256 amount) external view returns(uint256 result) {
+    function countFee(uint256  initiator, uint256  userTypeSender, uint256 userTypeReceiver, uint256 amount) external view returns(uint256 result) {
         require(feeRulesVerified);
         FeeRule memory feeRule = getFeeRule(userTypeSender, userTypeReceiver);
         if (feeRule.userTypeSender == 0) {

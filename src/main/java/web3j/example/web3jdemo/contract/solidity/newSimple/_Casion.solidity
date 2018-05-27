@@ -4,18 +4,16 @@ import 'browser/_Ownable.sol';
 import 'browser/_Fee.sol';
 import 'browser/_SafeMath.sol';
 import 'browser/_Arrays.sol';
+import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 
 contract BasicToken is Ownable {
 
-    using SafeMath for uint256;
+    using SafeMath for uint;
+    using strings for *;
 
-    uint256 internal maxSupply_;
-    uint256 internal totalSupply_;
+    uint public maxSupply;
+    uint public totalSupply;
 
-    function totalSupply() public view returns(uint256);
-    function setTotalSupply(uint256 amount) internal;
-
-    function maxSupply() public view returns(uint256);
 }
 
 contract ManagingUser is BasicToken {
@@ -27,12 +25,12 @@ contract ManagingUser is BasicToken {
     struct UserData {
         bool    active;
         UserKind userKind;
-        uint256 userType;
-        uint256 balance;
-        uint256 balanceReserved;
+        uint userType;
+        uint balance;
+        uint balanceReserved;
     }
 
-    uint256 public usersNumber;
+    uint public usersNumber;
     mapping(address => UserData) internal users;
 
     event UserRegister(
@@ -43,9 +41,8 @@ contract ManagingUser is BasicToken {
 
     event UserTypeSetting(
         address indexed userAddress,
-        uint256 indexed prevType,
-        uint256 indexed newType,
-        string details
+        uint indexed prevType,
+        uint indexed newType
         );
 
     event UserActiveSetting(
@@ -62,10 +59,23 @@ contract ManagingUser is BasicToken {
         registerUser(userAddress, UserKind.ADMIN, userType, details);
     }
 
-    function registerUser(address userAddress, uint32 userType, string details) external
+    function registerUser(address[] userAddresses, uint32 userType, string details, string delimiter) external
         onlyAdmin
     {
-        registerUser(userAddress, UserKind.USER, userType, details);
+        uint i;
+        if (bytes(delimiter).length == 0) {
+            for (i = 0; i < userAddresses.length; i++) {
+                registerUser(userAddresses[i], UserKind.USER, userType, details);
+            }
+        } else {
+            var detailsSlice = details.toSlice();
+            var delim = delimiter.toSlice();
+            require(userAddresses.length == detailsSlice.count(delim) + 1);
+
+            for (i = 0; i < userAddresses.length; i++) {
+                registerUser(userAddresses[i], UserKind.USER, userType, details);
+            }
+        }
     }
 
     function registerUser(address userAddress, UserKind userKind, uint32 userType, string details) internal {
@@ -86,39 +96,37 @@ contract ManagingUser is BasicToken {
         emit UserTypeSetting (
             userAddress,
             0,
-            userType,
-            "init"
+            userType
             );
     }
 
-    function setUserTypeFor(address userAddress, uint32 userType, string details) external
+    function setUserTypeFor(address userAddress, uint32 userType) external
         onlyAdmin
     {
-        uint256 currUserType = users[userAddress].userType;
+        uint currUserType = users[userAddress].userType;
         require(currUserType != userType);
         users[userAddress].userType = userType;
 
         emit UserTypeSetting (
             userAddress,
             currUserType,
-            userType,
-            details
+            userType
             );
     }
 
     function activateUser(address userAddress, string details) external
         onlyAdmin
     {
-        setUserTypeFor(userAddress, true, details);
+        setUserActiveFor(userAddress, true, details);
     }
 
     function deActivateUser(address userAddress, string details) external
         onlyAdmin
     {
-        setUserTypeFor(userAddress, false, details);
+        setUserActiveFor(userAddress, false, details);
     }
 
-    function setUserTypeFor(address userAddress, bool active, string details) internal {
+    function setUserActiveFor(address userAddress, bool active, string details) internal {
         require(users[userAddress].active != active);
         users[userAddress].active = active;
 
@@ -132,7 +140,7 @@ contract ManagingUser is BasicToken {
     /*public*/
 
     function typeOf(address _address) external view
-        returns(uint256)
+        returns(uint)
     {
         return users[_address].userType;
     }
@@ -171,7 +179,7 @@ contract Documenting {
     using Arrays for bytes32[];
     using Strings for string;
 
-    mapping(address=>mapping(bytes32=>uint256)) internal docLogs;
+    mapping(address=>mapping(bytes32=>uint)) internal docLogs;
     mapping(address=>bytes32[]) internal docLogsList;
 
     function documentsUIDs(address _address) public view
@@ -187,7 +195,7 @@ contract Documenting {
     }
 
     function documentAmount(address _address, string documentUID) public view
-        returns(uint256)
+        returns(uint)
     {
         return docLogs[_address][documentHash(documentUID)];
     }
@@ -207,7 +215,7 @@ contract Documenting {
     {
         require(documentExists(_address, documentUID));
         bytes32 documentUIDHash = documentHash(documentUID);
-        uint256 idx = docLogsList[_address].find(documentUIDHash);
+        uint idx = docLogsList[_address].find(documentUIDHash);
         assert(idx != uint(-1));
         docLogsList[_address].remove(idx);
         delete docLogs[_address][documentUIDHash];
@@ -222,28 +230,35 @@ contract Documenting {
 
 contract OperatingUser is ManagingUser {
 
-    function incBalance(address userAddress, uint256 amount) internal
+    event Transfer(
+        address indexed from,
+        address indexed to,
+        uint amount,
+        string details
+        );
+
+    function incBalance(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
-        users[userAddress].balance.add(amount);
+        users[userAddress].balance = users[userAddress].balance.add(amount);
     }
 
-    function decBalance(address userAddress, uint256 amount) internal
+    function decBalance(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
-        users[userAddress].balance.sub(amount);
+        users[userAddress].balance = users[userAddress].balance.sub(amount);
     }
 
-    function incBalanceReserved(address userAddress, uint256 amount) internal
+    function incBalanceReserved(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
-        users[userAddress].balanceReserved.add(amount);
+        users[userAddress].balanceReserved = users[userAddress].balanceReserved.add(amount);
     }
 
-    function decBalanceReserved(address userAddress, uint256 amount) internal
+    function decBalanceReserved(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
-        users[userAddress].balanceReserved.sub(amount);
+        users[userAddress].balanceReserved = users[userAddress].balanceReserved.sub(amount);
     }
 
     modifier onlyForActiveUser(address userAddress) {
@@ -258,18 +273,18 @@ contract Enrolling is Documenting, OperatingUser {
     event RegisterEnrollDocument(
         address indexed userAddress,
         string indexed documentUID,
-        uint256 amount,
+        uint amount,
         string details
         );
 
     event Mint(
         address userAddress,
-        uint256 amount,
+        uint amount,
         string indexed documentUID,
         string details
         );
 
-    function registerEnrollRequest(address userAddress, uint256 amount, string documentUID, string details) external
+    function registerEnrollRequest(address userAddress, uint amount, string documentUID, string details) external
         onlyAdmin
     {
         addDocument(userAddress, amount, documentUID);
@@ -284,10 +299,9 @@ contract Enrolling is Documenting, OperatingUser {
     function enroll(address userAddress, string documentUID, string details) external
         onlyAdmin
     {
-        uint256 currentTotalSupply = totalSupply();
-        uint256 amount = documentAmount(userAddress, documentUID);
-        require(currentTotalSupply + amount <= maxSupply());
-        setTotalSupply(currentTotalSupply.add(amount));
+        uint amount = documentAmount(userAddress, documentUID);
+        require(totalSupply + amount <= maxSupply);
+        totalSupply = totalSupply.add(amount);
 
         removeDocument(userAddress, documentUID);
 
@@ -298,6 +312,13 @@ contract Enrolling is Documenting, OperatingUser {
             amount,
             documentUID,
             details);
+
+        emit Transfer(
+            0,
+            userAddress,
+            amount,
+            details
+            );
     }
 
 }
@@ -307,18 +328,18 @@ contract Withdrowing is Documenting, OperatingUser {
     event RegisterWithdrawDocument(
         address indexed userAddress,
         string indexed documentUID,
-        uint256 amount,
+        uint amount,
         string details
         );
 
     event Burn(
         address indexed userAddress,
-        uint256 amount,
+        uint amount,
         string indexed documentUID,
         string details
         );
 
-    function registerWithdrawRequest(address userAddress, uint256 amount, string documentUID, string details) external
+    function registerWithdrawRequest(address userAddress, uint amount, string documentUID, string details) external
         onlyAdmin
     {
         addDocument(userAddress, amount, documentUID);
@@ -336,9 +357,8 @@ contract Withdrowing is Documenting, OperatingUser {
     function withdraw(address userAddress, string documentUID, string details) external
         onlyAdmin
     {
-        uint256 currentTotalSupply = totalSupply();
-        uint256 amount = documentAmount(userAddress, documentUID);
-        setTotalSupply(currentTotalSupply.sub(amount));
+        uint amount = documentAmount(userAddress, documentUID);
+        totalSupply = totalSupply.sub(amount);
 
         removeDocument(userAddress, documentUID);
 
@@ -349,6 +369,13 @@ contract Withdrowing is Documenting, OperatingUser {
             amount,
             documentUID,
             details);
+
+        emit Transfer(
+            userAddress,
+            0,
+            amount,
+            details
+            );
     }
 
 }
@@ -356,47 +383,192 @@ contract Withdrowing is Documenting, OperatingUser {
 contract Casion is Enrolling, Withdrowing, ManagingFee {
 
     function balanceOf(address _address) external view
-        returns (uint256)
+        returns (uint)
     {
         return users[_address].balance;
     }
 
     function balanceResirvedOf(address _address) external view
-        returns (uint256)
+        returns (uint)
     {
         return users[_address].balance;
     }
 
-    function maxSupply() public view
-        returns (uint256)
+    function transfer(address receiver, uint amount, string details) external
+        onlyForActiveUser(msg.sender)
+        onlyForActiveUser(receiver)
     {
-        return maxSupply_;
+        transferFromTo(msg.sender, receiver, amount, details);
     }
 
-    function totalSupply() public view
-        returns (uint256)
-    {
-        return totalSupply_;
-    }
-
-    function setTotalSupply(uint256 amount) internal {
-        totalSupply_ = amount;
-    }
-
-    function transferFrom(address _from, address _to, int amount, string details) external
+    /*function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
         onlyAdmin
     {
-        // transferFromTo(_from, _to, amount, details);
+        uint sl = senders.length;
+        uint rl = receivers.length;
+        uint al = amounts.length;
+        require(sl == 1 || sl == rl || sl == al);
+        require(rl == 1 || rl == sl || rl == al);
+        require(al == 1 || al == sl || al == rl);
+
+        uint i;
+        if (bytes(delimiter).length == 0) {
+            for (i = 0; i < sl && i < rl; i++) {
+                transferFromTo(
+                    senders[i.min256(sl-1)],
+                    receivers[i.min256(rl-1)],
+                    amounts[i.min256(al-1)],
+                    details);
+            }
+        } else {
+            var detailsSlice = details.toSlice();
+            var delim = delimiter.toSlice();
+            require(sl == detailsSlice.count(delim) + 1
+                    ||rl == detailsSlice.count(delim) + 1);
+
+            for (i = 0; i < sl && i < rl; i++) {
+                transferFromTo(
+                    senders[i.min256(sl-1)],
+                    receivers[i.min256(rl-1)],
+                    amounts[i.min256(al-1)],
+                    detailsSlice.split(delim).toString());
+            }
+        }
+    }*/
+
+    function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
+        onlyAdmin
+    {
+        require(senders.length == 1 || senders.length == receivers.length || senders.length == amounts.length);
+        require(receivers.length == 1 || receivers.length == senders.length || receivers.length == amounts.length);
+        require(amounts.length == 1 || amounts.length == senders.length || amounts.length == receivers.length);
+
+        uint i;
+        if (bytes(delimiter).length == 0) {
+            for (i = 0; i < senders.length && i < receivers.length; i++) {
+                transferFromTo(
+                    senders[i < senders.length ? i : 0],
+                    receivers[i < receivers.length ? i : 0],
+                    amounts[i < amounts.length ? i : 0],
+                    details);
+            }
+        } else {
+            var detailsSlice = details.toSlice();
+            var delim = delimiter.toSlice();
+            require(senders.length == detailsSlice.count(delim) + 1
+                    ||receivers.length == detailsSlice.count(delim) + 1);
+
+            for (i = 0; i < senders.length && i < receivers.length; i++) {
+                transferFromTo(
+                    senders[i < senders.length ? i : 0],
+                    receivers[i < receivers.length ? i : 0],
+                    amounts[i < amounts.length ? i : 0],
+                    detailsSlice.split(delim).toString());
+            }
+        }
     }
 
+    /*function transferFrom(address sender, address receiver, uint amount, string details) external
+        onlyAdmin
+    {
+        transferFromTo(sender, receiver, amount, details);
+    }
 
-    function getFeeValue(address sender, address receiver, uint256 amount) external view returns(uint256 result){
+    function transferFrom(address[] senders, address receiver, uint amount, string details) external
+        onlyAdmin
+    {
+        for (uint i = 0; i < senders.length; i++) {
+            transferFromTo(senders[i], receiver, amount, details);
+        }
+    }
+
+    function transferFrom(address[] senders, address[] receivers, uint amount, string details) external
+        onlyAdmin
+    {
+        require(senders.length == receivers.length);
+        for (uint i = 0; i < senders.length; i++) {
+            transferFromTo(senders[i], receivers[i], amount, details);
+        }
+    }
+
+    function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
+        onlyAdmin
+    {
+        require(senders.length == receivers.length);
+        require(senders.length == amounts.length);
+        uint i;
+        if (bytes(delimiter).length == 0) {
+            for (i = 0; i < senders.length; i++) {
+                transferFromTo(senders[i], receivers[i], amounts[i], details);
+            }
+        } else {
+            var detailsSlice = details.toSlice();
+            var delim = delimiter.toSlice();
+            require(senders.length == detailsSlice.count(delim) + 1);
+
+            for (i = 0; i < senders.length; i++) {
+                transferFromTo(senders[i], receivers[i], amounts[i], detailsSlice.split(delim).toString());
+            }
+        }
+    }
+
+    function transferFrom(address sender, address[] receivers, uint amount, string details) external
+        onlyAdmin
+        returns(bool)
+    {
+        for (uint i = 0; i < receivers.length; i++) {
+            transferFromTo(sender, receivers[i], amount, details);
+        }
+        return true;
+    }
+
+    function transferFrom(address sender, address[] receivers, uint[] amounts, string details, string delimiter) external
+        onlyAdmin
+    {
+        require(receivers.length == amounts.length);
+        uint i;
+        if (bytes(delimiter).length == 0) {
+            for (i = 0; i < receivers.length; i++) {
+                transferFromTo(sender, receivers[i], amounts[i], details);
+            }
+        } else {
+            var detailsSlice = details.toSlice();
+            var delim = delimiter.toSlice();
+            require(receivers.length == detailsSlice.count(delim) + 1);
+
+            for (i = 0; i < receivers.length; i++) {
+                transferFromTo(sender, receivers[i], amounts[i], detailsSlice.split(delim).toString());
+            }
+        }
+    }*/
+
+    function transferFromTo(address from, address to, uint amount, string details) private  {
+        uint feeValue = getFeeValue(
+                msg.sender,
+                from,
+                to,
+                amount
+        );
+        require(amount.add(feeValue) <= users[from].balance);
+        users[from].balance = users[from].balance.sub(amount.add(feeValue));
+        users[to].balance = users[to].balance.add(amount);
+
+        emit Transfer(
+            from,
+            to,
+            amount,
+            details
+            );
+    }
+
+    function getFeeValue(address initiator, address sender, address receiver, uint amount) public view returns(uint result){
         result = fee.countFee(
+                users[initiator].userType,
                 users[sender].userType,
                 users[receiver].userType,
                 amount
             );
-        assert(result != uint256(-1));
+        assert(result != uint(-1));
     }
 
 }
