@@ -9,6 +9,7 @@ import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 //4,079,434
 //4,462,258
 //4,438,050
+//4,439,722
 contract BasicToken is Ownable {
 
     using SafeMath64 for uint64;
@@ -44,8 +45,8 @@ contract ManagingUser is BasicToken {
 
     event UserTypeSetting(
         address indexed userAddress,
-        uint indexed prevType,
-        uint indexed newType
+        uint32 indexed prevType,
+        uint32 indexed newType
         );
 
     event UserActiveSetting(
@@ -106,7 +107,7 @@ contract ManagingUser is BasicToken {
     function setUserTypeFor(address userAddress, uint32 userType) external
         onlyAdmin
     {
-        uint currUserType = users[userAddress].userType;
+        uint32 currUserType = users[userAddress].userType;
         require(currUserType != userType);
         users[userAddress].userType = userType;
 
