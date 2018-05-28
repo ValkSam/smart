@@ -2,20 +2,17 @@ pragma solidity ^0.4.23;
 
 import 'browser/_Ownable.sol';
 import 'browser/_Fee.sol';
-import 'browser/_SafeMath64.sol';
+import 'browser/_SafeMath.sol';
 import 'browser/_Arrays.sol';
 import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 
-//4,079,434
-//4,462,258
-//4,438,050
 contract BasicToken is Ownable {
 
-    using SafeMath64 for uint64;
+    using SafeMath for uint;
     using strings for *;
 
-    uint64 public maxSupply = uint64(-1);
-    uint64 public totalSupply;
+    uint public maxSupply = uint(-1);
+    uint public totalSupply;
 
 }
 
@@ -28,9 +25,9 @@ contract ManagingUser is BasicToken {
     struct UserData {
         bool    active;
         UserKind userKind;
-        uint32 userType;
-        uint64 balance;
-        uint64 balanceReserved;
+        uint userType;
+        uint balance;
+        uint balanceReserved;
     }
 
     uint public usersNumber;
@@ -182,7 +179,7 @@ contract Documenting {
     using Arrays for bytes32[];
     using Strings for string;
 
-    mapping(address=>mapping(bytes32=>uint64)) internal docLogs;
+    mapping(address=>mapping(bytes32=>uint)) internal docLogs;
     mapping(address=>bytes32[]) internal docLogsList;
 
     function documentsUIDs(address _address) public view
@@ -198,12 +195,12 @@ contract Documenting {
     }
 
     function documentAmount(address _address, string documentUID) public view
-        returns(uint64)
+        returns(uint)
     {
         return docLogs[_address][documentHash(documentUID)];
     }
 
-    function addDocument(address _address, uint64 amount, string documentUID) internal
+    function addDocument(address _address, uint amount, string documentUID) internal
     {
         require(bytes(documentUID).length != 0);
         require(bytes(documentUID).length <= 32);
@@ -236,30 +233,30 @@ contract OperatingUser is ManagingUser {
     event Transfer(
         address indexed from,
         address indexed to,
-        uint64 amount,
+        uint amount,
         uint fee,
         string details
         );
 
-    function incBalance(address userAddress, uint64 amount) internal
+    function incBalance(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
         users[userAddress].balance = users[userAddress].balance.add(amount);
     }
 
-    function decBalance(address userAddress, uint64 amount) internal
+    function decBalance(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
         users[userAddress].balance = users[userAddress].balance.sub(amount);
     }
 
-    function incBalanceReserved(address userAddress, uint64 amount) internal
+    function incBalanceReserved(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
         users[userAddress].balanceReserved = users[userAddress].balanceReserved.add(amount);
     }
 
-    function decBalanceReserved(address userAddress, uint64 amount) internal
+    function decBalanceReserved(address userAddress, uint amount) internal
         onlyForActiveUser(userAddress)
     {
         users[userAddress].balanceReserved = users[userAddress].balanceReserved.sub(amount);
@@ -277,18 +274,18 @@ contract Enrolling is Documenting, OperatingUser {
     event RegisterEnrollDocument(
         address indexed userAddress,
         string indexed documentUID,
-        uint64 amount,
+        uint amount,
         string details
         );
 
     event Mint(
         address userAddress,
-        uint64 amount,
+        uint amount,
         string indexed documentUID,
         string details
         );
 
-    function registerEnrollRequest(address userAddress, uint64 amount, string documentUID, string details) external
+    function registerEnrollRequest(address userAddress, uint amount, string documentUID, string details) external
         onlyAdmin
     {
         addDocument(userAddress, amount, documentUID);
@@ -303,7 +300,7 @@ contract Enrolling is Documenting, OperatingUser {
     function enroll(address userAddress, string documentUID, string details) external
         onlyAdmin
     {
-        uint64 amount = documentAmount(userAddress, documentUID);
+        uint amount = documentAmount(userAddress, documentUID);
         require(totalSupply + amount <= maxSupply);
         totalSupply = totalSupply.add(amount);
 
@@ -333,18 +330,18 @@ contract Withdrowing is Documenting, OperatingUser {
     event RegisterWithdrawDocument(
         address indexed userAddress,
         string indexed documentUID,
-        uint64 amount,
+        uint amount,
         string details
         );
 
     event Burn(
         address indexed userAddress,
-        uint64 amount,
+        uint amount,
         string indexed documentUID,
         string details
         );
 
-    function registerWithdrawRequest(address userAddress, uint64 amount, string documentUID, string details) external
+    function registerWithdrawRequest(address userAddress, uint amount, string documentUID, string details) external
         onlyAdmin
     {
         addDocument(userAddress, amount, documentUID);
@@ -362,7 +359,7 @@ contract Withdrowing is Documenting, OperatingUser {
     function withdraw(address userAddress, string documentUID, string details) external
         onlyAdmin
     {
-        uint64 amount = documentAmount(userAddress, documentUID);
+        uint amount = documentAmount(userAddress, documentUID);
         totalSupply = totalSupply.sub(amount);
 
         removeDocument(userAddress, documentUID);
@@ -400,18 +397,18 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
         return users[_address].balanceReserved;
     }
 
-    function transfer(address receiver, uint64 amount, string details) external
+    function transfer(address receiver, uint amount, string details) external
         onlyForActiveUser(msg.sender)
         onlyForActiveUser(receiver)
     {
         transferFromTo(msg.sender, receiver, amount, details);
     }
 
-    function transferFrom(address[] senders, address[] receivers, uint64[] amounts, string details, string delimiter) external
+    function transferFrom(address[] senders, address[] receivers, uint[] amounts, string details, string delimiter) external
         onlyAdmin
     {
-        require(senders.length == 1 || senders.length == receivers.length);
-        require(receivers.length == 1 || receivers.length == senders.length);
+        require(senders.length == 1 || senders.length == receivers.length || senders.length == amounts.length || (receivers.length == 1 && amounts.length == 1));
+        require(receivers.length == 1 || receivers.length == senders.length || receivers.length == amounts.length || (senders.length == 1 && amounts.length == 1));
         require(amounts.length == 1 || amounts.length == senders.length || amounts.length == receivers.length);
 
         uint i;
@@ -439,8 +436,8 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
         }
     }
 
-    function transferFromTo(address from, address to, uint64 amount, string details) private  {
-        uint64 feeValue = getFeeValue(
+    function transferFromTo(address from, address to, uint amount, string details) private  {
+        uint feeValue = getFeeValue(
                 msg.sender,
                 from,
                 to,
@@ -459,14 +456,14 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
             );
     }
 
-    function getFeeValue(address initiator, address sender, address receiver, uint64 amount) public view returns(uint64 result){
+    function getFeeValue(address initiator, address sender, address receiver, uint amount) public view returns(uint result){
         result = fee.countFee(
                 users[initiator].userType,
                 users[sender].userType,
                 users[receiver].userType,
                 amount
             );
-        assert(result != uint64(-1));
+        assert(result != uint(-1));
     }
 
 }
