@@ -12,16 +12,22 @@ import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 //4,439,722
 //4,701,946
 //4,693,962
+//4,675,446
+//4,598,165 no details for activate
+//4,585,017 remove assert in removeDocument
+//4,358,923 remove name and symbol
+//4,521,851 add cancel doc +160 000
+//4,528,827 add cancel withdraw
 contract BasicToken is Ownable {
 
     using SafeMath64 for uint64;
     using strings for *;
 
-    uint64 public maxSupply = uint64(-1);
+    uint public maxSupply = uint64(-1);
     uint64 public totalSupply;
-    string public name = "Casion";
-    string public symbol = "DLT";
-    uint public decimals = 2; //TODO
+    // string public name = "Casion";
+    // string public symbol = "DLT";
+    uint public decimals = 2;
 
 }
 
@@ -35,14 +41,13 @@ contract ManagingUser is BasicToken {
 
     event UserTypeSetting(
         address indexed userAddress,
-        uint32 indexed prevType,
-        uint32 indexed newType
+        uint indexed prevType,
+        uint indexed newType
         );
 
     event UserActiveSetting(
         address indexed userAddress,
-        bool indexed acive,
-        string details
+        bool indexed acive
         );
 
     enum UserKind {
@@ -121,26 +126,25 @@ contract ManagingUser is BasicToken {
             );
     }
 
-    function activateUser(address userAddress, string details) external
+    function activateUser(address userAddress) external
         onlyAdmin
     {
-        setUserActiveFor(userAddress, true, details);
+        setUserActiveFor(userAddress, true);
     }
 
-    function deActivateUser(address userAddress, string details) external
+    function deActivateUser(address userAddress) external
         onlyAdmin
     {
-        setUserActiveFor(userAddress, false, details);
+        setUserActiveFor(userAddress, false);
     }
 
-    function setUserActiveFor(address userAddress, bool active, string details) internal {
+    function setUserActiveFor(address userAddress, bool active) internal {
         require(users[userAddress].active != active);
         users[userAddress].active = active;
 
         emit UserActiveSetting (
             userAddress,
-            active,
-            details
+            active
             );
     }
 
@@ -222,9 +226,7 @@ contract Documenting {
     {
         require(documentExists(_address, documentUID));
         bytes32 documentUIDHash = documentHash(documentUID);
-        uint idx = docLogsList[_address].find(documentUIDHash);
-        assert(idx != uint(-1));
-        docLogsList[_address].remove(idx);
+        docLogsList[_address].remove(docLogsList[_address].find(documentUIDHash));
         delete docLogs[_address][documentUIDHash];
     }
 
@@ -281,13 +283,13 @@ contract Enrolling is Documenting, OperatingUser {
     event RegisterEnrollDocument(
         address indexed userAddress,
         string indexed documentUID,
-        uint64 amount,
+        uint amount,
         string details
         );
 
     event Mint(
-        address userAddress,
-        uint64 amount,
+        address indexed userAddress,
+        uint amount,
         string indexed documentUID,
         string details
         );
@@ -301,6 +303,18 @@ contract Enrolling is Documenting, OperatingUser {
             userAddress,
             documentUID,
             amount,
+            details);
+    }
+
+    function cancelEnrollRequestDocument(address userAddress, string documentUID, string details) external
+        onlyAdmin
+    {
+        removeDocument(userAddress, documentUID);
+
+        emit RegisterEnrollDocument(
+            userAddress,
+            documentUID,
+            -(documentAmount(userAddress, documentUID)),
             details);
     }
 
@@ -337,13 +351,13 @@ contract Withdrowing is Documenting, OperatingUser {
     event RegisterWithdrawDocument(
         address indexed userAddress,
         string indexed documentUID,
-        uint64 amount,
+        uint amount,
         string details
         );
 
     event Burn(
         address indexed userAddress,
-        uint64 amount,
+        uint amount,
         string indexed documentUID,
         string details
         );
@@ -360,6 +374,22 @@ contract Withdrowing is Documenting, OperatingUser {
             userAddress,
             documentUID,
             amount,
+            details);
+    }
+
+    function cancelEnrollRequestDocument(address userAddress, string documentUID, string details) external
+        onlyAdmin
+    {
+        uint64 amount = documentAmount(userAddress, documentUID);
+        removeDocument(userAddress, documentUID);
+
+        incBalance(userAddress, amount);
+        decBalanceReserved(userAddress, amount);
+
+        emit RegisterWithdrawDocument(
+            userAddress,
+            documentUID,
+            -(amount),
             details);
     }
 
