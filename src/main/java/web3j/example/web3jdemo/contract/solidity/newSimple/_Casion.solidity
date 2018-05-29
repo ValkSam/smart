@@ -10,6 +10,8 @@ import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 //4,462,258
 //4,438,050
 //4,439,722
+//4,701,946
+//4,693,962
 contract BasicToken is Ownable {
 
     using SafeMath64 for uint64;
@@ -17,25 +19,13 @@ contract BasicToken is Ownable {
 
     uint64 public maxSupply = uint64(-1);
     uint64 public totalSupply;
+    string public name = "Casion";
+    string public symbol = "DLT";
+    uint public decimals = 2; //TODO
 
 }
 
 contract ManagingUser is BasicToken {
-
-    enum UserKind {
-        ADMIN, USER
-    }
-
-    struct UserData {
-        bool    active;
-        UserKind userKind;
-        uint32 userType;
-        uint64 balance;
-        uint64 balanceReserved;
-    }
-
-    uint public usersNumber;
-    mapping(address => UserData) internal users;
 
     event UserRegister(
         address indexed userAddress,
@@ -55,7 +45,20 @@ contract ManagingUser is BasicToken {
         string details
         );
 
-    /*restricted*/
+    enum UserKind {
+        ADMIN, USER
+    }
+
+    struct UserData {
+        bool    active;
+        UserKind userKind;
+        uint32 userType;
+        uint64 balance;
+        uint64 balanceReserved;
+    }
+
+    uint public usersNumber;
+    mapping(address => UserData) internal users;
 
     function registerAdmin(address userAddress, uint32 userType, string details) external
         onlyOwner
@@ -174,7 +177,7 @@ contract ManagingFee is Ownable {
         onlyOwner
      {
          fee = Fee(feeContractAddress);
-         require(fee.feeRulesVerified());
+         require(fee.activated());
      }
 }
 
@@ -237,7 +240,7 @@ contract OperatingUser is ManagingUser {
     event Transfer(
         address indexed from,
         address indexed to,
-        uint64 amount,
+        uint amount,
         uint fee,
         string details
         );
