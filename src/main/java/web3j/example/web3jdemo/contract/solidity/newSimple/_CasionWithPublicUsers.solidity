@@ -19,7 +19,8 @@ import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 //4,521,851 add cancel enroll +160 000
 //4,528,827 add cancel withdraw
 //4,675,228
-//4,659,324 internal maxSupply
+//4,664,088 public users - no getters
+//4,648,120 internal maxSupply
 contract BasicToken is Ownable {
 
     using SafeMath64 for uint64;
@@ -64,7 +65,7 @@ contract ManagingUser is BasicToken {
 
     address public ownerStubAddress = address(1);
     uint public usersNumber;
-    mapping(address => UserData) internal users;
+    mapping(address => UserData) public users;
 
     function registerAdmin(address userAddress, uint32 userType, string details) external
         onlyOwner
@@ -145,20 +146,6 @@ contract ManagingUser is BasicToken {
             userAddress,
             active
             );
-    }
-
-    /*public*/
-
-    function typeOf(address _address) external view
-        returns(uint)
-    {
-        return users[_address].userType;
-    }
-
-    function activeOf(address _address) public view
-        returns(bool)
-    {
-        return users[_address].active;
     }
 
     /*modifier*/
@@ -269,7 +256,7 @@ contract OperatingUser is ManagingUser {
     }
 
     modifier onlyForActiveUser(address userAddress) {
-        require (activeOf(userAddress));
+        require(users[userAddress].active);
         _;
     }
 
@@ -425,18 +412,6 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
 
     constructor() public {
         users[ownerStubAddress] = UserData(true, UserKind.OWNER, 0, 0, 0);
-    }
-
-    function balanceOf(address _address) external view
-        returns (uint)
-    {
-        return users[_address].balance;
-    }
-
-    function balanceResirvedOf(address _address) external view
-        returns (uint)
-    {
-        return users[_address].balanceReserved;
     }
 
     function transfer(address receiver, uint64 amount, string details) external

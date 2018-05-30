@@ -18,15 +18,15 @@ import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 //4,358,923 remove name and symbol
 //4,521,851 add cancel enroll +160 000
 //4,528,827 add cancel withdraw
-//4,675,228
-//4,659,324 internal maxSupply
 contract BasicToken is Ownable {
 
     using SafeMath64 for uint64;
     using strings for *;
 
-    uint internal maxSupply = uint64(-1);
+    uint public maxSupply = uint64(-1);
     uint64 public totalSupply;
+    // string public name = "Casion";
+    // string public symbol = "DLT";
     uint public decimals = 2;
 
 }
@@ -35,7 +35,6 @@ contract ManagingUser is BasicToken {
 
     event UserRegister(
         address indexed userAddress,
-        UserKind indexed userKind,
         string details
         );
 
@@ -50,35 +49,33 @@ contract ManagingUser is BasicToken {
         bool indexed acive
         );
 
-    enum UserKind {
-        OWNER, ADMIN, USER
-    }
-
     struct UserData {
         bool    active;
-        UserKind userKind;
         uint32 userType;
         uint64 balance;
         uint64 balanceReserved;
     }
 
-    address public ownerStubAddress = address(1);
+    uint32 internal userTypeReservedForAdmins = 100000;
+
     uint public usersNumber;
     mapping(address => UserData) internal users;
 
     function registerAdmin(address userAddress, uint32 userType, string details) external
         onlyOwner
     {
-        registerUser(userAddress, UserKind.ADMIN, userType, details);
+        require(userType < userTypeReservedForAdmins); //strict comparison: max value of userTypeReservedForAdmins reserved for owner
+        registerUser(userAddress, userType, details);
     }
 
     function registerUser(address[] userAddresses, uint32 userType, string details, string delimiter) external
         onlyAdmin
     {
+        require(userType > userTypeReservedForAdmins);
         uint i;
         if (bytes(delimiter).length == 0) {
             for (i = 0; i < userAddresses.length; i++) {
-                registerUser(userAddresses[i], UserKind.USER, userType, details);
+                registerUser(userAddresses[i], userType, details);
             }
         } else {
             var detailsSlice = details.toSlice();
@@ -86,22 +83,21 @@ contract ManagingUser is BasicToken {
             require(userAddresses.length == detailsSlice.count(delim) + 1);
 
             for (i = 0; i < userAddresses.length; i++) {
-                registerUser(userAddresses[i], UserKind.USER, userType, detailsSlice.split(delim).toString());
+                registerUser(userAddresses[i], userType, detailsSlice.split(delim).toString());
             }
         }
     }
 
-    function registerUser(address userAddress, UserKind userKind, uint32 userType, string details) internal {
+    function registerUser(address userAddress, uint32 userType, string details) internal {
         require(userType != 0);
         require(users[userAddress].userType == 0);
 
-        users[userAddress] = UserData(true, userKind, userType, 0, 0);
+        users[userAddress] = UserData(true, userType, userTypeReservedForAdmins, 0);
 
         usersNumber++;
 
         emit UserRegister (
             userAddress,
-            userKind,
             details
             );
 
@@ -115,7 +111,7 @@ contract ManagingUser is BasicToken {
     function setUserTypeFor(address userAddress, uint32 userType) external
         onlyAdmin
     {
-        uint32 currUserType = users[userAddress].userType;
+        uint32 currUserType = users[userAddress].userType; //TODO
         require(userType != 0);
         users[userAddress].userType = userType;
 
@@ -165,7 +161,7 @@ contract ManagingUser is BasicToken {
 
     modifier onlyAdmin() {
         if (msg.sender != owner) {
-            require (users[msg.sender].userKind == UserKind.ADMIN);
+            require (users[msg.sender].userType < userTypeReservedForAdmins);
         }
         _;
     }
@@ -417,15 +413,20 @@ contract Withdrowing is Documenting, OperatingUser {
 
 contract Casion is Enrolling, Withdrowing, ManagingFee {
 
+   /* struct OwnerData { //4,579,713
+        uint64 balance;
+        uint64 balanceReserved;
+    }
+
+    OwnerData ownerData = OwnerData(0, 0);*/
+
     event Fee(
         address indexed from,
         address indexed to,
         uint amount
         );
 
-    constructor() public {
-        users[ownerStubAddress] = UserData(true, UserKind.OWNER, 0, 0, 0);
-    }
+    // UserData ownerData = UserData(true, userTypeReservedForAdmins, 0, 0); //4,620,580
 
     function balanceOf(address _address) external view
         returns (uint)
@@ -486,13 +487,14 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
                 to,
                 amount
         );
+        UserData storage ownerData = users[address(0)];
+        UserData storage sender = from == owner ? ownerData : users[from]; //4,706,112
+        UserData storage receiver = to == owner ? ownerData : users[to];
+        require(amount.add(feeValue) <= sender.balance);                    //4,623,088
+        sender.balance = sender.balance.sub(amount.add(feeValue));
+        receiver.balance = receiver.balance.add(amount);
 
-        require(amount.add(feeValue) <= users[from].balance);
-        users[from].balance = users[from].balance.sub(amount.add(feeValue));
-        users[to].balance = users[to].balance.add(amount);
-
-        UserData storage ownerData = users[ownerStubAddress];
-        ownerData.balance = ownerData.balance.add(feeValue);
+        ownerData.balance = ownerData.balance.add(feeValue); //4,678,664
 
         emit Transfer(
             from,
@@ -501,17 +503,17 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
             details
             );
 
-        emit Fee(
+        emit Fee(       //4,652,836 //4,644,942
             from,
-            ownerStubAddress,
+            owner,
             feeValue
             );
     }
 
-    function getFeeValue(address initiator, address sender, address receiver, uint64 amount) public view
-        returns(uint64 result)
-    {
-        result = fee.countFee(
+    function getFeeValue(address initiator, address sender, address receiver, uint64 amount) public view returns(uint64 result){
+        result = sender == owner || receiver == owner
+            ? 0
+            : fee.countFee(
                 users[initiator].userType,
                 users[sender].userType,
                 users[receiver].userType,

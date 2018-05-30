@@ -50,20 +50,21 @@ contract Fee {
 
     function countFee(uint32 initiator, uint32  userTypeSender, uint32 userTypeReceiver, uint64 amount) external view returns(uint64 result) {
         require(activated);
-        FeeRule memory feeRule = getFeeRule(userTypeSender, userTypeReceiver);
-        if (feeRule.userTypeSender == 0) {
-            return uint64(-1);
+        if (userTypeSender == 0 || userTypeReceiver == 0) {
+            return 0;
         }
+        FeeRule storage feeRule = getFeeRule(userTypeSender, userTypeReceiver);
         result = amount * feeRule.percent / 100 + feeRule.fixedAmount;
         return result.max64(feeRule.minAmount).min64(feeRule.maxAmount);
     }
 
-    function getFeeRule(uint32 userTypeSender, uint32 userTypeReceiver) private view returns(FeeRule) {
+    function getFeeRule(uint32 userTypeSender, uint32 userTypeReceiver) private view returns(FeeRule storage) {
         for (uint i = 0; i < feeRules.length; i++) {
             if (feeRules[i].userTypeSender == userTypeSender && feeRules[i].userTypeReceiver == userTypeReceiver) {
                 return feeRules[i];
             }
         }
+        revert();
     }
 
     function checkRuls() external
@@ -76,7 +77,6 @@ contract Fee {
     }
 
     function checkRuleParams() private {
-
         for (uint i = 0; i < feeRules.length; i++) {
             if (feeRules[i].userTypeSender == 0 || feeRules[i].userTypeReceiver == 0) {
                 wrongRules.push(feeRules[i]);
