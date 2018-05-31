@@ -20,6 +20,7 @@ import "github.com/Arachnid/solidity-stringutils/src/strings.sol";
 //4,528,827 add cancel withdraw
 //4,675,228
 //4,659,324 internal maxSupply
+//4,644,160 simple Fee
 contract BasicToken is Ownable {
 
     using SafeMath64 for uint64;
@@ -419,7 +420,6 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
 
     event Fee(
         address indexed from,
-        address indexed to,
         uint amount
         );
 
@@ -446,7 +446,7 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
         transferFromTo(msg.sender, receiver, amount, details);
     }
 
-    /*We must control on app side that both senders and receivers are not admin*/
+    /*We must control on app side that both senders and receivers are not admin or owner*/
     function transferFrom(address[] senders, address[] receivers, uint64[] amounts, string details, string delimiter) external
         onlyAdmin
     {
@@ -503,7 +503,6 @@ contract Casion is Enrolling, Withdrowing, ManagingFee {
 
         emit Fee(
             from,
-            ownerStubAddress,
             feeValue
             );
     }
